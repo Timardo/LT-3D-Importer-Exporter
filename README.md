@@ -34,19 +34,26 @@ generate the output advanced recipe and up to an hour to actually place it, depe
 ## TODO
 
 An actual GUI with options:
+###
  - full path name to model
  - full path name to texture (optional)
  - select a block which will be used as a base
  - select a color for the model (optional)
  - resize the model (and see its actual dimensions)
+###
+ - Preview the model in its full 3d glory, somehow?
 
-Preview the model in its full 3d glory, somehow?
-Make the importing server friendly
-Some multithreading?
-Ability to rotate the model in a preview state?
-Minimize tiles used? (remove those players cannot actually see)
-Make it faster
-Make min. precision configurable (magic number that makes blocks appear where they should be, values above 1 will cause holes in the model)
+ - Make the importing server friendly
+
+ - Some multithreading?
+
+ - Ability to rotate the model in a preview state?
+
+ - Minimize tiles used? (remove those players cannot actually see)
+
+ - Make it faster
+
+ - Make min. precision configurable (magic number that makes blocks appear where they should be, values above 1 will cause holes in the model)
 
 Kudos to Fredlllll for [his plugin](https://dev.bukkit.org/projects/print3d). It would take me much more time figuring out how to work
 with textures without it.
