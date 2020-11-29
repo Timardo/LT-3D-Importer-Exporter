@@ -1,0 +1,16 @@
+[
+{
+  "modid": "lt3dimporter",
+  "name": "LT 3D Importer",
+  "description": "Mod for importing 3D models into Minecraft as a LittleTiles microblock structure.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Timardo"],
+  "credits": "CreativeMD for the awesome Little Tiles mod",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": ["creativecore", "littletiles"]
+}
+]

@@ -1,0 +1,68 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven { url = "https://files.minecraftforge.net/maven" }
+        maven { url = "https://oss.sonatype.org/content/repositories/releases/"}
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'de.javagl:obj:0.3.0'
+    }
+}
+apply plugin: 'net.minecraftforge.gradle.forge'
+
+version = "0.1"
+group = "net.timardo.lt3dimporter"
+archivesBaseName = "lt3dimporter"
+
+sourceCompatibility = targetCompatibility = '1.8'
+
+compileJava {
+    sourceCompatibility = targetCompatibility = '1.8'
+}
+
+minecraft {
+    version = "1.12.2-14.23.5.2847"
+    runDir = "run"
+    mappings = "snapshot_20171003"
+    makeObfSourceJar = false
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+configurations {
+    obj
+}
+
+dependencies {
+    obj group: 'de.javagl', name: 'obj', version: '0.3.0'
+    compile group: 'de.javagl', name: 'obj', version: '0.3.0'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+task deobfJar(type: Jar, dependsOn: 'jar') {
+    from "build/classes/main"
+    from "build/resources/main"
+    classifier "dev"
+}
+artifacts {
+    archives deobfJar
+}
+
+jar {
+    from {
+        configurations.obj.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
