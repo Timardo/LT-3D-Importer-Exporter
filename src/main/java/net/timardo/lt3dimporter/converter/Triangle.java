@@ -1,9 +1,5 @@
 package net.timardo.lt3dimporter.converter;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import de.javagl.obj.FloatTuple;
 
 import net.minecraft.util.math.BlockPos;
@@ -16,7 +12,7 @@ public class Triangle {
     public Vec3d c;
     public double[] u; // [a, b, c]
     public double[] v; // ...
-    //public double[] w; not yet implemented until I find an obj with 3d texture
+    //public double[] w; not currently implemented until I find an obj with a 3d texture
     public boolean t; // whether the Triangle has texture coords for its points
     
     public Triangle(FloatTuple a, FloatTuple b, FloatTuple c) {
@@ -25,19 +21,14 @@ public class Triangle {
         this.c = new Vec3d(c.getX(), c.getY(), c.getZ());
         this.t = false;
     }
-    
-    public Map<Long, Double[]> calcBlocks(double minPrecision, double scale) {
-        return calcBlocks(minPrecision, scale, new BlockPos(0, 0, 0));
-    }
 
-    public Map<Long, Double[]> calcBlocks(double minPrecision, double scale, BlockPos relativePos) {
+    public void calcBlocks(double minPrecision, double scale, ConvertedModel output) {
         Vec3d sA = a.scale(scale); // scale BEFORE processing
         Vec3d sB = b.scale(scale);
         Vec3d sC = c.scale(scale);
         Vec3d vectAC = sA.subtractReverse(sC); // make vectors
         Vec3d vectBC = sB.subtractReverse(sC);
         double slices = vectAC.lengthVector() / minPrecision + 2d;
-        HashMap<Long, Double[]> blocks = new LinkedHashMap<Long, Double[]>();
         
         for (int i = 0; i <= slices; i++) {
             double t = i / slices; // ratio
@@ -50,11 +41,9 @@ public class Triangle {
             
             for (int j = 0; j <= subSlices; j++) {
                 double u = j / subSlices;
-                blocks.put(new BlockPos(p1.add(v.scale(u))).toLong(), this.t ? new Double[] { uv1[0] + (uv2[0] - uv1[0]) * u, uv1[1] + (uv2[1] - uv1[1]) * u } : null);
+                output.addTile(new BlockPos(p1.add(v.scale(u))), this.t ? new double[] { uv1[0] + (uv2[0] - uv1[0]) * u, uv1[1] + (uv2[1] - uv1[1]) * u } : null);
             }
         }
-        
-        return blocks;
     }
     
     public void addTexCoords(FloatTuple a, FloatTuple b, FloatTuple c) {

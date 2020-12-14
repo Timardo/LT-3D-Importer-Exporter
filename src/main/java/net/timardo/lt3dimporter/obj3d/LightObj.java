@@ -64,7 +64,7 @@ public class LightObj implements Obj {
     private String activeMaterialGroupName = null;
     
     public List<Triangle> triangles;
-    private double[] boxCoords;
+    public double[] boxCoords; // [maxX, maxY, maxZ, minX, minY, minZ]
     private double[] boxSize;
     private boolean isFinal;
 

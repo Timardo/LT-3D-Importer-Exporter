@@ -31,7 +31,7 @@ public class TestCommand implements ICommand {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/3dconvert <3dmodel_file> <max_size> <grid_size> [texture_file] [color]";
+        return "/3dconvert <3dmodel_file> <max_size> <grid_size> <precision> [texture_file] [color]";
     }
 
     @Override
@@ -41,12 +41,12 @@ public class TestCommand implements ICommand {
 
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-        if (args.length < 3) {
+        if (args.length < 4) {
             sender.sendMessage(new TextComponentString(this.getUsage(sender)));
             return;
         }
         
-        ((EntityPlayer) sender).addItemStackToInventory(ConvertUtil.convertToRecipe(args[0], args.length > 3  && args[3].contains(".") ? args[3] : null, args.length > 3 && !(args[3].contains(".")) ? new String[] { args[3], args[4], args[5] } : null, args[1], args[2]));
+        ((EntityPlayer) sender).addItemStackToInventory(ConvertUtil.convertModelToRecipe(args[0], args.length > 4  && args[4].contains(".") ? args[4] : null, args.length > 4 && !(args[4].contains(".")) ? new String[] { args[4], args[5], args[6] } : null, args[1], args[2], args[3]));
     }
 
     @Override

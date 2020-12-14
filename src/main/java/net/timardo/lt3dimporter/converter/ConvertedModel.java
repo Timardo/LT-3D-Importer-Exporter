@@ -1,0 +1,61 @@
+package net.timardo.lt3dimporter.converter;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import com.creativemd.littletiles.LittleTiles;
+import com.creativemd.littletiles.common.block.BlockLTColored;
+import com.creativemd.littletiles.common.tile.LittleTileColored;
+import com.creativemd.littletiles.common.tile.math.box.LittleBox;
+import com.creativemd.littletiles.common.tile.math.vec.LittleVec;
+import com.creativemd.littletiles.common.tile.preview.LittlePreview;
+import com.creativemd.littletiles.common.tile.preview.LittlePreviews;
+import com.creativemd.littletiles.common.util.grid.LittleGridContext;
+
+import net.minecraft.util.math.BlockPos;
+import net.timardo.lt3dimporter.obj3d.LightObj;
+
+public class ConvertedModel { // TODO parse mtl files for multiple textures in one .obj file
+    
+    public LinkedHashMap<Integer, List<LittlePreview>> colorMap;
+    public Set<Long> blocks;
+    public Texture texture;
+    public LittlePreviews previews; // TODO get rid of this field
+    public LightObj obj;
+    public double ratio;
+    
+    public ConvertedModel(Texture tex, LittleGridContext context, LightObj obj, double ratio) {
+        this.colorMap = new LinkedHashMap<Integer, List<LittlePreview>>();
+        this.blocks = new LinkedHashSet<Long>();
+        this.texture = tex;
+        this.previews = new LittlePreviews(context);
+        this.obj = obj;
+        this.ratio = ratio;
+    }
+
+    public void addTile(BlockPos blockPos, double[] uv) {
+        double u = uv == null ? 0 : uv[0];
+        double v = uv == null ? 0 : uv[1];
+        int color = this.texture.colorTile(u, v);
+        long longPos = blockPos.toLong();
+
+        if (!this.blocks.add(longPos)) return; // block is already registered (maybe with different color but whatever)
+        
+        List<LittlePreview> pList = this.colorMap.get(color);
+        LittleTileColored tile = new LittleTileColored(LittleTiles.coloredBlock, BlockLTColored.EnumType.clean.ordinal(), color);
+        tile.setBox(new LittleBox(new LittleVec(blockPos.getX(), blockPos.getY(), blockPos.getZ())));
+        
+        if (pList == null) {
+            pList = new ArrayList<LittlePreview>();
+            pList.add(tile.getPreviewTile());
+            this.colorMap.put(color, pList);
+        } else {
+            pList.add(tile.getPreviewTile());
+        }
+
+        this.previews.addWithoutCheckingPreview(tile.getPreviewTile());
+    }
+}
