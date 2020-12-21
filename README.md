@@ -7,45 +7,41 @@ The only limit with this mod is your computer (and Minecraft)
 
 ## But.. HOW?
 
-This is a very early version which only works through a command: `/3dconvert <3dmodel_file> <max_size> <grid_size> <precision> [texture_file] [color]`
-Note that the 3d model file has to be in the base minecraft folder (where the mods folder is) and MUST contain the file extension
-(.obj most of the times). Max size parameter is the max size in any direction of your imported 3d model
-(so it will NEVER be longer/higher/thiccer than this value), this value is in little tile blocks. Grid size accepts any available grid
-size specified in the config, otherwise, the game will nicely tell you (in red text) to use a valid size. Precision is a number that affects
-the precision of converting polygons to blocks. Lower values mean more precise conversion and slower conversion. Value 0.7 is recommended
-minimum and value 0.01 is recommended maximum. Values below this threshold will not have noticeable effect. Texture file and color is an
-optional parameter (only one at a time is valid). Texture file also must lie in the base minecraft folder and contain the file extension.
-Color is defined by 3 integers in range 0 - 255 each setting the value of red, green and blue in the final color. If there is no color
-or texture defined, all little tiles will be white.
+![Converted](https://i.imgur.com/7x1chXW.png)
 
-Examples:
+In a creative inventory, find LittleTiles tab and find new premade structure (currently with a weird name) that should contain word "modelimporter". It should look like a block next to the dog on the picture above. Place it down and click on it - a pretty self explanatory GUI will open. Every text field has a tooltip to understand what it does.
 
-`/3dconvert model.obj 512 32 0.7 texture.png` - this will load file model.obj in the base minecraft folder with grid size of
-32, max size of 512 little tiles (so the model will be at most 16 minecraft blocks in any dimension), precision 0.7 and texture in file texture.png
+- You can either use a texture or go with custom color
 
-`/3dconvert 3dobject.obj 100 16 0.4 127 0 255` - this one will not load a texture but instead paint all blocks with specific color
-R: 127 G: 0 B: 255
+- Base block can also be set to whatever block you like - default is plain LittleTiles Colored Block
 
-`/3dconvert cocacolaglass.obj 100 10 0.1` - this will throw an error because 10 is not (by default) a valid grid size
+- Grid will determine the size of grid to be used
 
-No, the mod will not work through commands at its final release
+- Precision text box is an advanced parameter that can help smooth the converted structure. Lower values mean higher precision. It is not recommended to set values above `0.9` as that can cause little holes in the structure and values below `0.01` have no noticeable effect and can extend the time needed to generate the structure multiple times
 
-Also, please be reasonable and do not import models with large max_size numbers (above 1000), it can take as much as ~~20 minutes~~ 
-1 second  to generate the output advanced recipe and up to an hour to actually place it, depending on your PC.
+- Max size is the maximum length/height or thickness of the structure, whichever has the highest value. This value is in LittleTiles not vanilla Minecraft blocks. For example a dog model with grid `16` and max size `256` (which is `16*16`) will never be longer/thicker or taller than 16 vanilla blocks.
+
+ 
+
+It is also required to have an empty Advanced Recipe in the output slot (next to the Convert button) if working in survival mode. However, that shouldn't be a problem since the model importer doesn't have a recipe yet.
+
+Proper wiki is coming soon.
+
+Also, please be reasonable and do not import models with large max size numbers (above 1000), it can take up to an hour to place it, depending on your PC.
 
 ## Releases
 GitHub - https://github.com/Timardo/LT-3D-Importer/releases
 
-CurseForge - soon
+CurseForge - https://www.curseforge.com/minecraft/mc-mods/littletiles-3d-importer/files
 
 ## TODO
 
 An actual GUI with options:
 ###
- - full path name to model
- - full path name to texture (optional)
- - select a block which will be used as a base
- - select a color for the model (optional)
+ - ~~full path name to model~~ [Done]
+ - ~~full path name to texture (optional)~~ [Done]
+ - ~~select a block which will be used as a base~~ [Done]
+ - ~~select a color for the model (optional)~~ [Done]
  - resize the model (and see its actual dimensions)
 ###
  - Preview the model in its full 3d glory, somehow?
@@ -59,6 +55,10 @@ An actual GUI with options:
  - Minimize tiles used? (remove those players cannot actually see)
  
  - Parse .mtl files
+ 
+ - Fix localizing issue
+ 
+ - Fix recipe issue
 
  - ~~Make it faster~~ [Done]
 

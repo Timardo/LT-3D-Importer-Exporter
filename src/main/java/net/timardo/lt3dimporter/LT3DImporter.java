@@ -7,9 +7,9 @@ import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.*;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import net.timardo.lt3dimporter.container.ModelImporterContainer;
-import net.timardo.lt3dimporter.gui.ModelImporterGui;
 import net.timardo.lt3dimporter.littlestructure.ModelImporter;
+import net.timardo.lt3dimporter.littlestructure.ModelImporterContainer;
+import net.timardo.lt3dimporter.littlestructure.ModelImporterGui;
 
 import org.apache.logging.log4j.Logger;
 
@@ -20,17 +20,17 @@ import com.creativemd.littletiles.client.gui.handler.LittleStructureGuiHandler;
 import com.creativemd.littletiles.common.structure.LittleStructure;
 import com.creativemd.littletiles.common.structure.type.premade.LittleStructurePremade;
 
-@Mod(modid = LT3DImporter.MOD_ID, name = LT3DImporter.NAME, version = LT3DImporter.VERSION)
+@Mod(modid = LT3DImporter.MOD_ID, name = LT3DImporter.NAME, version = LT3DImporter.VERSION, dependencies = "required-after:creativecore;required-after:littletiles")
 public class LT3DImporter {
     public static final String MOD_ID = "lt3dimporter";
-    public static final String NAME = "LT3DImporter";
-    public static final String VERSION = "0.2";
+    public static final String NAME = "Little Tiles 3D Importer";
+    public static final String VERSION = "0.3";
     public static Logger logger;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent e) {
         logger = e.getModLog();
-        // GUI WIP 
+
         GuiHandler.registerGuiHandler("modelimporter", new LittleStructureGuiHandler() {
             
             @Override
@@ -47,12 +47,12 @@ public class LT3DImporter {
     }
     
     @EventHandler
-    public void Init(FMLInitializationEvent event) {
-        LittleStructurePremade.registerPremadeStructureType("modelimporter", MOD_ID, ModelImporter.class);
+    public void init(FMLInitializationEvent event) {
+        LittleStructurePremade.registerPremadeStructureType("modelimporter", LT3DImporter.MOD_ID, ModelImporter.class);
     }
     
     @EventHandler
     public void fml(FMLServerStartingEvent e) {
-        e.registerServerCommand(new TestCommand());
+        //e.registerServerCommand(new ConvertCommand()); TODO add convert command which works
     }
 }

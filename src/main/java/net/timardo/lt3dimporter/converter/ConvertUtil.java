@@ -1,10 +1,17 @@
 package net.timardo.lt3dimporter.converter;
 
-import java.io.*;
-import java.util.*;
+import java.util.List;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.io.FileNotFoundException;
+
+import org.lwjgl.util.Color;
 
 import com.creativemd.creativecore.common.utils.mc.ColorUtils;
-import com.creativemd.littletiles.LittleTiles;
 import com.creativemd.littletiles.common.tile.math.vec.LittleVec;
 import com.creativemd.littletiles.common.tile.preview.LittlePreview;
 import com.creativemd.littletiles.common.util.grid.LittleGridContext;
@@ -31,9 +38,10 @@ public class ConvertUtil implements Runnable {
      * @param color - string array of 3 integers referencing a color in RGB format 
      * @param maxSize - maximum amount of little tiles in any given dimension
      * @param grid - grid size to use for the output
+     * 
      * @return an Advanced Recipe ItemStack to play with
      */
-    public static ItemStack convertModelToRecipe(String modelFile, String texName, String[] color, String maxSize, String grid, String minprecision) { // TODO new thread
+    public static NBTTagCompound convertModelToRecipe(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture) { // TODO new thread
         InputStream objInputStream = null;
         
         try {
@@ -61,45 +69,44 @@ public class ConvertUtil implements Runnable {
         
         Texture tex = new ColoredTexture(BASE_COLOR);
         
-        if (color != null)
-            tex = new ColoredTexture(ColorUtils.RGBToInt(new Vec3i(Integer.parseInt(color[0]), Integer.parseInt(color[1]), Integer.parseInt(color[2]))));
-        if (texName != null) {
+        if (texture) {
             try {
                 tex = new NormalTexture(texName);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        } else {
+            tex = new ColoredTexture(ColorUtils.RGBAToInt(color));
         }
         
         double[] s = obj.getSides();
-        double ratio = Double.parseDouble(maxSize) / Math.max(s[0], Math.max(s[1], s[2]));
-        LittleGridContext context = LittleGridContext.get(Integer.parseInt(grid));
-        ConvertedModel outputModel = new ConvertedModel(tex, context, obj, ratio);
+        double ratio = maxSize / Math.max(s[0], Math.max(s[1], s[2]));
+        LittleGridContext context = LittleGridContext.get(grid);
+        ConvertedModel outputModel = new ConvertedModel(tex, context, obj, ratio, baseBlock);
 
         for (Triangle t : obj.triangles) {
-            t.calcBlocks(Double.parseDouble(minprecision), ratio, outputModel);
+            t.calcBlocks(minprecision, ratio, outputModel);
         }
         
         /*if (tex instanceof ColoredTexture) // TODO check if this actually helps in terms of placing, RAM and rendering performance
             BasicCombiner.combinePreviews(tiles);*/
 
-        ItemStack stack = new ItemStack(LittleTiles.recipeAdvanced);
         System.out.println("prepare for some waiting...");
         long time = System.currentTimeMillis();
-        fastSavePreview(outputModel, stack);
+        NBTTagCompound nbt = fastSavePreview(outputModel);
         System.out.println("done in " + (System.currentTimeMillis() - time) + "ms");
-        return stack;
+        return nbt;
     }
     
     /**
      *  <b>MUCH</b> faster equivalent of LittlePreview.savePreview which is tweaked a bit to fit the needs of this mod
      * 
-     * @param model the model
-     * @param stack itemstack that gets filled by NBT generated from the model
+     * @param model - the model
+     * @param stack - itemstack that gets filled by NBT generated from the model
      */
-    public static void fastSavePreview(ConvertedModel model, ItemStack stack) {
-        stack.setTagCompound(new NBTTagCompound());
-        model.previews.getContext().set(stack.getTagCompound());
+    public static NBTTagCompound fastSavePreview(ConvertedModel model) {
+        NBTTagCompound ret = new NBTTagCompound();
+        model.previews.getContext().set(ret);
         
         int minX = (int) Math.round(model.obj.boxCoords[3] * model.ratio);
         int minY = (int) Math.round(model.obj.boxCoords[4] * model.ratio);
@@ -108,10 +115,10 @@ public class ConvertUtil implements Runnable {
         int maxY = (int) Math.round(model.obj.boxCoords[1] * model.ratio);
         int maxZ = (int) Math.round(model.obj.boxCoords[2] * model.ratio);
         
-        new LittleVec(maxX - minX, maxY - minY, maxZ - minZ).writeToNBT("size", stack.getTagCompound());
-        new LittleVec(minX, minY, minZ).writeToNBT("min", stack.getTagCompound());
+        new LittleVec(maxX - minX, maxY - minY, maxZ - minZ).writeToNBT("size", ret);
+        new LittleVec(minX, minY, minZ).writeToNBT("min", ret);
         
-        if (model.previews.totalSize() >= LittlePreview.lowResolutionMode) {
+        if (model.previews.totalSize() >= LittlePreview.lowResolutionMode) { // TODO do this elsewhere and save some more power
             NBTTagList list = new NBTTagList();
             HashSet<BlockPos> positions = new HashSet<>();
             
@@ -124,9 +131,9 @@ public class ConvertUtil implements Runnable {
                 }
             }
             
-            stack.getTagCompound().setTag("pos", list);
+            ret.setTag("pos", list);
         } else
-            stack.getTagCompound().removeTag("pos");
+            ret.removeTag("pos");
         
         NBTTagList list = new NBTTagList();
         
@@ -155,13 +162,12 @@ public class ConvertUtil implements Runnable {
             }
         }
         
-        stack.getTagCompound().setTag("tiles", list);
-        stack.getTagCompound().setInteger("count", model.previews.size());
+        ret.setTag("tiles", list);
+        ret.setInteger("count", model.previews.size());
+        
+        return ret;
     }
 
     @Override
-    public void run() {
-        // TODO Auto-generated method stub
-        
-    }
+    public void run() { }
 }

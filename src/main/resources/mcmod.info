@@ -2,7 +2,7 @@
 {
   "modid": "lt3dimporter",
   "name": "LT 3D Importer",
-  "description": "Mod for importing 3D models into Minecraft as a LittleTiles microblock structure.",
+  "description": "Mod for importing 3D models into Minecraft as a LittleTiles structure.",
   "version": "${version}",
   "mcversion": "${mcversion}",
   "url": "",

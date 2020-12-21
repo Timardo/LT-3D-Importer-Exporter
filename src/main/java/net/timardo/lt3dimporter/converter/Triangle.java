@@ -22,7 +22,7 @@ public class Triangle {
         this.t = false;
     }
 
-    public void calcBlocks(double minPrecision, double scale, ConvertedModel output) {
+    public void calcBlocks(float minPrecision, double scale, ConvertedModel output) {
         Vec3d sA = a.scale(scale); // scale BEFORE processing
         Vec3d sB = b.scale(scale);
         Vec3d sC = c.scale(scale);

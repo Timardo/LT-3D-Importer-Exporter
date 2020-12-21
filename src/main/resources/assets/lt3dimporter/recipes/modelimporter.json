@@ -1,0 +1,34 @@
+{
+	"result": {
+		"item": "littletiles:premade",
+		"data": 0,
+		"structure": "modelimporter"
+	},
+	"pattern": [
+		"HIB",
+		"PRP",
+		"SSS"
+	],
+	"type": "littletiles:crafting_shaped_premade",
+	"key": {
+		"H": {
+			"item": "minecraft:hopper"
+		},
+		"I": {
+			"item": "minecraft:iron_ingot"
+		},
+		"B": {
+			"item": "minecraft:stone_button"
+		},
+		"P": {
+			"item": "minecraft:planks"
+		},
+		"R": {
+			"item": "littletiles:recipeadvanced",
+			"data": 0
+		},
+		"S": {
+			"item": "minecraft:stone_slab"
+		}
+	}
+}
