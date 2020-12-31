@@ -200,7 +200,18 @@ public class LightObj implements Obj {
     @Override
     public void addVertex(FloatTuple vertex) {
         Objects.requireNonNull(vertex, "The vertex is null");
+        
         this.vertices.add(vertex);
+        
+        if (this.vertices.size() == 1) {
+            this.boxCoords[0] = vertex.getX();
+            this.boxCoords[1] = vertex.getY();
+            this.boxCoords[2] = vertex.getZ();
+            this.boxCoords[3] = vertex.getX();
+            this.boxCoords[4] = vertex.getY();
+            this.boxCoords[5] = vertex.getZ();
+            return;
+        }
         
         if (vertex.getX() > this.boxCoords[0]) this.boxCoords[0] = vertex.getX();
         if (vertex.getY() > this.boxCoords[1]) this.boxCoords[1] = vertex.getY();
