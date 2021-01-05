@@ -9,27 +9,86 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.io.FileNotFoundException;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.lwjgl.util.Color;
 
+import com.creativemd.creativecore.common.gui.container.SubGui;
+import com.creativemd.creativecore.common.gui.controls.gui.GuiButton;
 import com.creativemd.creativecore.common.utils.mc.ColorUtils;
+import com.creativemd.creativecore.common.utils.mc.WorldUtils;
+import com.creativemd.littletiles.LittleTiles;
 import com.creativemd.littletiles.common.tile.math.vec.LittleVec;
 import com.creativemd.littletiles.common.tile.preview.LittlePreview;
 import com.creativemd.littletiles.common.util.grid.LittleGridContext;
 
 import de.javagl.obj.ObjReader;
 import de.javagl.obj.ObjUtils;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagIntArray;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
+import net.timardo.lt3dimporter.LT3DImporter;
+import net.timardo.lt3dimporter.littlestructure.ModelImporterGui;
 import net.timardo.lt3dimporter.obj3d.LightObj;
 
-public class ConvertUtil implements Runnable {
+public class Converter implements Runnable {
     
     private static final int BASE_COLOR = ColorUtils.RGBToInt(new Vec3i(255, 255, 255));
+    private String model;
+    private String tex;
+    private Color col;
+    private int size;
+    private int grid;
+    private float precision;
+    private ItemStack base;
+    private boolean isTex;
+    private ModelImporterGui gui;
+    private EntityPlayer player;
     
+    public Converter(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture, ModelImporterGui parent, EntityPlayer player) {
+        this.model = modelFile;
+        this.tex = texName;
+        this.col = color;
+        this.size = maxSize;
+        this.grid = grid;
+        this.precision = minprecision;
+        this.base = baseBlock;
+        this.isTex = texture;
+        this.gui = parent;
+        this.player = player;
+    }
+    
+    @Override
+    public void run() {
+        NBTTagCompound tag = null;
+        
+        if (isTex && tex.isEmpty()) {
+            postMessage(TextFormatting.RED + "Empty texture field!");
+            return;
+        }
+        
+        try {
+            tag = convertModelToRecipe();
+        } catch (ImportException ie) {
+            postMessage(TextFormatting.RED + ie.getReason());
+            return;
+        }
+        
+        gui.sendPacketToServer(tag);
+        ItemStack recipe = new ItemStack(LittleTiles.recipeAdvanced);
+        recipe.setTagCompound(tag);
+        WorldUtils.dropItem(player, recipe);
+    }
+
+    private void postMessage(String msg) {
+        this.player.sendMessage(new TextComponentString(msg));
+    }
+
     /**
      * Basic algorithm to load, convert, parse and return an Advanced Recipe ItemStack from .obj model
      * 
@@ -41,13 +100,14 @@ public class ConvertUtil implements Runnable {
      * 
      * @return an Advanced Recipe ItemStack to play with
      */
-    public static NBTTagCompound convertModelToRecipe(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture) { // TODO new thread
+    private NBTTagCompound convertModelToRecipe() throws ImportException { // TODO new thread
         InputStream objInputStream = null;
         
         try {
-            objInputStream = new FileInputStream(modelFile);
+            objInputStream = new FileInputStream(this.model);
         } catch (FileNotFoundException | NullPointerException e) {
-            return null;
+            LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
+            throw new ImportException("Cannot read model file! Does it exist?");
         }
         
         LightObj obj = null;
@@ -55,8 +115,8 @@ public class ConvertUtil implements Runnable {
         try {
             obj = (LightObj) ObjReader.read(objInputStream, new LightObj());
         } catch (IOException e) { 
-            System.out.print(e.getStackTrace());
-            return null;
+            LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
+            throw new ImportException("Unreadable model file! Is it in obj format?");
         }
         
         obj = ObjUtils.triangulate(obj, new LightObj(true));
@@ -64,34 +124,36 @@ public class ConvertUtil implements Runnable {
         try {
             objInputStream.close();
         } catch (IOException | NullPointerException e) {
-            return null;
+            LT3DImporter.logger.error("Error closing the stream! If you are getting this error too often, open an issue on GitHub (link on CurseForge). Include this info:" + System.lineSeparator() + ExceptionUtils.getStackTrace(e));
+            throw new ImportException("Error closing the stream! Check log!"); // TODO check if I should continue and ignore this
         }
         
         Texture tex = new ColoredTexture(BASE_COLOR);
         
-        if (texture) {
+        if (this.isTex) {
             try {
-                tex = new NormalTexture(texName);
+                tex = new NormalTexture(this.tex);
             } catch (IOException e) {
-                e.printStackTrace();
+                LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
+                throw new ImportException("Error loading texture file! Is it in supported format? (JPEG, PNG, BMP)");
             }
         } else {
-            tex = new ColoredTexture(ColorUtils.RGBAToInt(color));
+            tex = new ColoredTexture(ColorUtils.RGBAToInt(this.col));
         }
         
         double[] s = obj.getSides();
-        double ratio = maxSize / Math.max(s[0], Math.max(s[1], s[2]));
+        double ratio = this.size / Math.max(s[0], Math.max(s[1], s[2]));
         LittleGridContext context = LittleGridContext.get(grid);
-        ConvertedModel outputModel = new ConvertedModel(tex, context, obj, ratio, baseBlock);
+        ConvertedModel outputModel = new ConvertedModel(tex, context, obj, ratio, this.base);
 
         for (Triangle t : obj.triangles) {
-            t.calcBlocks(minprecision, ratio, outputModel);
+            t.calcBlocks(this.precision, ratio, outputModel);
         }
         
         /*if (tex instanceof ColoredTexture) // TODO check if this actually helps in terms of placing, RAM and rendering performance
             BasicCombiner.combinePreviews(tiles);*/
 
-        System.out.println("prepare for some waiting...");
+        System.out.println("prepare for some waiting..."); // TODO remove this timing thing
         long time = System.currentTimeMillis();
         NBTTagCompound nbt = fastSavePreview(outputModel);
         System.out.println("done in " + (System.currentTimeMillis() - time) + "ms");
@@ -104,7 +166,7 @@ public class ConvertUtil implements Runnable {
      * @param model - the model
      * @param stack - itemstack that gets filled by NBT generated from the model
      */
-    public static NBTTagCompound fastSavePreview(ConvertedModel model) {
+    private NBTTagCompound fastSavePreview(ConvertedModel model) {
         NBTTagCompound ret = new NBTTagCompound();
         model.previews.getContext().set(ret);
         
@@ -167,7 +229,4 @@ public class ConvertUtil implements Runnable {
         
         return ret;
     }
-
-    @Override
-    public void run() { }
 }

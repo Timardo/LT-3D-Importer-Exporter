@@ -2,6 +2,11 @@ package net.timardo.lt3dimporter.littlestructure;
 
 import javax.annotation.Nullable;
 
+import com.creativemd.creativecore.common.gui.controls.gui.GuiCheckBox;
+import com.creativemd.creativecore.common.gui.controls.gui.GuiColorPicker;
+import com.creativemd.creativecore.common.gui.controls.gui.GuiComboBox;
+import com.creativemd.creativecore.common.gui.controls.gui.GuiTextfield;
+import com.creativemd.creativecore.common.gui.controls.gui.custom.GuiStackSelectorAll;
 import com.creativemd.littletiles.client.gui.handler.LittleStructureGuiHandler;
 import com.creativemd.littletiles.common.action.LittleActionException;
 import com.creativemd.littletiles.common.action.block.LittleActionActivated;
@@ -19,6 +24,15 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class ModelImporter extends LittleStructurePremade {
+    
+    private String model;
+    private String gridSize;
+    private String precision;
+    private String texFile;
+    private GuiColorPicker colorPicker;
+    private boolean useTex;
+    private GuiStackSelectorAll baseBlock;
+    private GuiTextfield maxSize;
 
     public ModelImporter(LittleStructureType type, IStructureTileList mainBlock) {
         super(type, mainBlock);

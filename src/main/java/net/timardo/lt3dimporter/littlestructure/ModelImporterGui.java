@@ -18,7 +18,8 @@ import com.creativemd.littletiles.common.util.grid.LittleGridContext;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.timardo.lt3dimporter.converter.ConvertUtil;
+import net.timardo.lt3dimporter.converter.Converter;
+import net.timardo.lt3dimporter.converter.ImportException;
 
 public class ModelImporterGui extends SubGui {
     
@@ -32,9 +33,11 @@ public class ModelImporterGui extends SubGui {
     public GuiStackSelectorAll baseBlock;
     public GuiTextfield maxSize;
     public GuiButton convertButton;
+    private ModelImporterGui instance;
     
     public ModelImporterGui() {
         super(220, 186);
+        this.instance = this;
     }
 
     @Override
@@ -106,11 +109,11 @@ public class ModelImporterGui extends SubGui {
         this.maxSize.setCustomTooltip("Max size");
         addControl(this.maxSize);
         
-        this.convertButton = new GuiButton("convertbutton", "Convert!", 144, 80, 42, 14) {
+        this.convertButton = new GuiButton("convertbutton", "Import!", 144, 80, 42, 14) {
 
             @Override
             public void onClicked(int var1, int var2, int var3) {
-                NBTTagCompound tag = ConvertUtil.convertModelToRecipe(
+                Converter converter = new Converter(
                     modelFile.text,
                     texFile.text,
                     colorPicker.color,
@@ -118,10 +121,13 @@ public class ModelImporterGui extends SubGui {
                     Integer.parseInt(gridSizes.caption),
                     Float.parseFloat(minPrecision.text),
                     baseBlock.getSelected(),
-                    useTex.value
+                    useTex.value,
+                    instance,
+                    getPlayer()
                 );
                 
-                sendPacketToServer(tag);
+                Thread t = new Thread(converter);
+                t.start();
             }
             
         };

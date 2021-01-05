@@ -83,7 +83,14 @@ public class LightObj implements Obj {
         this.startedGroupNames = new HashMap<ObjFace, Set<String>>();
         this.startedMaterialGroupNames = new HashMap<ObjFace, String>();
         this.triangles = new ArrayList<Triangle>(); 
-        this.boxCoords = new double[6];
+        this.boxCoords = new double[] {
+                -Double.MAX_VALUE, // maxX
+                -Double.MAX_VALUE, // maxY
+                -Double.MAX_VALUE, // maxZ
+                Double.MAX_VALUE, // minX
+                Double.MAX_VALUE, // minY
+                Double.MAX_VALUE // minZ
+        };
         this.setActiveGroupNames(Arrays.asList("default"));
         this.getGroupInternal("default");
         this.isFinal = false;
@@ -202,16 +209,6 @@ public class LightObj implements Obj {
         Objects.requireNonNull(vertex, "The vertex is null");
         
         this.vertices.add(vertex);
-        
-        if (this.vertices.size() == 1) {
-            this.boxCoords[0] = vertex.getX();
-            this.boxCoords[1] = vertex.getY();
-            this.boxCoords[2] = vertex.getZ();
-            this.boxCoords[3] = vertex.getX();
-            this.boxCoords[4] = vertex.getY();
-            this.boxCoords[5] = vertex.getZ();
-            return;
-        }
         
         if (vertex.getX() > this.boxCoords[0]) this.boxCoords[0] = vertex.getX();
         if (vertex.getY() > this.boxCoords[1]) this.boxCoords[1] = vertex.getY();
