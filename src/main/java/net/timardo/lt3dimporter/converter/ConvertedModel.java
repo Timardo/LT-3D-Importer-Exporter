@@ -41,13 +41,11 @@ public class ConvertedModel { // TODO parse mtl files for multiple textures in o
     }
 
     public void addTile(BlockPos blockPos, double[] uv) {
-        double u = uv == null ? 0 : uv[0];
-        double v = uv == null ? 0 : uv[1];
-        int color = this.texture.colorTile(u, v);
         long longPos = blockPos.toLong();
 
         if (!this.blocks.add(longPos)) return; // block is already registered (maybe with different color but whatever)
         
+        int color = this.texture.colorTile(uv);
         List<LittlePreview> pList = this.colorMap.get(color);
         LittleTileColored tile = new LittleTileColored(this.baseBlock, this.meta, color);
         tile.setBox(new LittleBox(new LittleVec(blockPos.getX(), blockPos.getY(), blockPos.getZ())));

@@ -9,8 +9,7 @@ public class ColoredTexture implements Texture {
     }
     
     @Override
-    public int colorTile(double u, double v) {
+    public int colorTile(double[] uv) {
         return this.color;
     }
-    
 }

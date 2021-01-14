@@ -12,11 +12,9 @@ import java.io.FileNotFoundException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.lwjgl.util.Color;
 
-import com.creativemd.creativecore.common.gui.container.SubGui;
-import com.creativemd.creativecore.common.gui.controls.gui.GuiButton;
+import com.creativemd.creativecore.common.packet.PacketHandler;
 import com.creativemd.creativecore.common.utils.mc.ColorUtils;
-import com.creativemd.creativecore.common.utils.mc.WorldUtils;
-import com.creativemd.littletiles.LittleTiles;
+import com.creativemd.littletiles.common.tile.math.location.StructureLocation;
 import com.creativemd.littletiles.common.tile.math.vec.LittleVec;
 import com.creativemd.littletiles.common.tile.preview.LittlePreview;
 import com.creativemd.littletiles.common.util.grid.LittleGridContext;
@@ -33,7 +31,8 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.timardo.lt3dimporter.LT3DImporter;
-import net.timardo.lt3dimporter.littlestructure.ModelImporterGui;
+import net.timardo.lt3dimporter.littlestructure.ModelImporter;
+import net.timardo.lt3dimporter.network.PacketStructureNBT;
 import net.timardo.lt3dimporter.obj3d.LightObj;
 
 public class Converter implements Runnable {
@@ -47,10 +46,10 @@ public class Converter implements Runnable {
     private float precision;
     private ItemStack base;
     private boolean isTex;
-    private ModelImporterGui gui;
     private EntityPlayer player;
+    private ModelImporter structure;
     
-    public Converter(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture, ModelImporterGui parent, EntityPlayer player) {
+    public Converter(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture, /*ModelImporterGui parent,*/ EntityPlayer player, ModelImporter s) {
         this.model = modelFile;
         this.tex = texName;
         this.col = color;
@@ -59,8 +58,8 @@ public class Converter implements Runnable {
         this.precision = minprecision;
         this.base = baseBlock;
         this.isTex = texture;
-        this.gui = parent;
         this.player = player;
+        this.structure = s;
     }
     
     @Override
@@ -78,11 +77,14 @@ public class Converter implements Runnable {
             postMessage(TextFormatting.RED + ie.getReason());
             return;
         }
-        
-        gui.sendPacketToServer(tag);
-        ItemStack recipe = new ItemStack(LittleTiles.recipeAdvanced);
-        recipe.setTagCompound(tag);
-        WorldUtils.dropItem(player, recipe);
+
+        PacketStructureNBT nbtPacket = new PacketStructureNBT();
+        NBTTagCompound packetNBT = new NBTTagCompound();
+        packetNBT.setBoolean("item", true);
+        packetNBT.setTag("loc", new StructureLocation(this.structure).write());
+        packetNBT.setTag("recipe_nbt", tag);
+        nbtPacket.setNBT(packetNBT);
+        PacketHandler.sendPacketToServer(nbtPacket);
     }
 
     private void postMessage(String msg) {
@@ -92,15 +94,9 @@ public class Converter implements Runnable {
     /**
      * Basic algorithm to load, convert, parse and return an Advanced Recipe ItemStack from .obj model
      * 
-     * @param modelFile - path to the model, with extension
-     * @param texName - path to the texture, with extension
-     * @param color - string array of 3 integers referencing a color in RGB format 
-     * @param maxSize - maximum amount of little tiles in any given dimension
-     * @param grid - grid size to use for the output
-     * 
-     * @return an Advanced Recipe ItemStack to play with
+     * @return a NBT tag for Advanced Recipe
      */
-    private NBTTagCompound convertModelToRecipe() throws ImportException { // TODO new thread
+    private NBTTagCompound convertModelToRecipe() throws ImportException {
         InputStream objInputStream = null;
         
         try {
@@ -124,8 +120,8 @@ public class Converter implements Runnable {
         try {
             objInputStream.close();
         } catch (IOException | NullPointerException e) {
-            LT3DImporter.logger.error("Error closing the stream! If you are getting this error too often, open an issue on GitHub (link on CurseForge). Include this info:" + System.lineSeparator() + ExceptionUtils.getStackTrace(e));
-            throw new ImportException("Error closing the stream! Check log!"); // TODO check if I should continue and ignore this
+            LT3DImporter.logger.error("Error closing the stream! If you are getting this error too often, please, open an issue on GitHub (link on CurseForge). Include this info:" + System.lineSeparator() + ExceptionUtils.getStackTrace(e));
+            postMessage(TextFormatting.RED + "Error closing the stream! Check log!");
         }
         
         Texture tex = new ColoredTexture(BASE_COLOR);
@@ -153,10 +149,10 @@ public class Converter implements Runnable {
         /*if (tex instanceof ColoredTexture) // TODO check if this actually helps in terms of placing, RAM and rendering performance
             BasicCombiner.combinePreviews(tiles);*/
 
-        System.out.println("prepare for some waiting..."); // TODO remove this timing thing
+        LT3DImporter.logger.debug("prepare for some waiting..."); // TODO remove this timing thing (in release?)
         long time = System.currentTimeMillis();
         NBTTagCompound nbt = fastSavePreview(outputModel);
-        System.out.println("done in " + (System.currentTimeMillis() - time) + "ms");
+        LT3DImporter.logger.debug("done in " + (System.currentTimeMillis() - time) + "ms");
         return nbt;
     }
     
@@ -164,7 +160,6 @@ public class Converter implements Runnable {
      *  <b>MUCH</b> faster equivalent of LittlePreview.savePreview which is tweaked a bit to fit the needs of this mod
      * 
      * @param model - the model
-     * @param stack - itemstack that gets filled by NBT generated from the model
      */
     private NBTTagCompound fastSavePreview(ConvertedModel model) {
         NBTTagCompound ret = new NBTTagCompound();
@@ -178,7 +173,7 @@ public class Converter implements Runnable {
         int maxZ = (int) Math.round(model.obj.boxCoords[2] * model.ratio);
         
         new LittleVec(maxX - minX, maxY - minY, maxZ - minZ).writeToNBT("size", ret);
-        new LittleVec(minX, minY, minZ).writeToNBT("min", ret);
+        new LittleVec(minX, minY, minZ).writeToNBT("min", ret); // TODO set base point to center of the object with min Y
         
         if (model.previews.totalSize() >= LittlePreview.lowResolutionMode) { // TODO do this elsewhere and save some more power
             NBTTagList list = new NBTTagList();

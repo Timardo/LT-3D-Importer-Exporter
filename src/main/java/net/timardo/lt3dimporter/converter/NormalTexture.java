@@ -15,9 +15,9 @@ public class NormalTexture implements Texture {
     }
 
     @Override
-    public int colorTile(double u, double v) {
-        double nU = u % 1.0F;
-        double nV = v % 1.0F;
+    public int colorTile(double[] uv) {
+        double nU = uv[0] % 1.0F;
+        double nV = uv[1] % 1.0F;
         
         if (nU < 0.0F)
             nU += 1.0F;

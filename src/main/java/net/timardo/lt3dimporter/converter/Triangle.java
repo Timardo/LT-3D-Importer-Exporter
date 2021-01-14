@@ -39,7 +39,7 @@ public class Triangle {
             Vec3d v = new Vec3d(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z); // vector
             double subSlices = v.lengthVector() / minPrecision + 2d; // number of slices in new line
             
-            for (int j = 0; j <= subSlices; j++) {
+            for (int j = 0; j <= subSlices; j++) { // TODO redo for 100% precision
                 double u = j / subSlices;
                 output.addTile(new BlockPos(p1.add(v.scale(u))), this.t ? new double[] { uv1[0] + (uv2[0] - uv1[0]) * u, uv1[1] + (uv2[1] - uv1[1]) * u } : null);
             }
