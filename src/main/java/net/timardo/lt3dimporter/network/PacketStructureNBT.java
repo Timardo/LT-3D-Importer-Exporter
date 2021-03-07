@@ -3,7 +3,7 @@ package net.timardo.lt3dimporter.network;
 import com.creativemd.creativecore.common.packet.CreativeCorePacket;
 import com.creativemd.littletiles.LittleTiles;
 import com.creativemd.littletiles.common.action.LittleActionException;
-import com.creativemd.littletiles.common.item.ItemRecipeAdvanced;
+import com.creativemd.littletiles.common.item.ItemLittleRecipeAdvanced;
 import com.creativemd.littletiles.common.tile.math.location.StructureLocation;
 
 import io.netty.buffer.ByteBuf;
@@ -54,7 +54,7 @@ public class PacketStructureNBT extends CreativeCorePacket {
         
         if (nbt.getBoolean("item")) {
             ItemStack slot = structure.output.inventory.getStackInSlot(0);
-            if (!(slot.getItem() instanceof ItemRecipeAdvanced || player.isCreative())) return;
+            if (!(slot.getItem() instanceof ItemLittleRecipeAdvanced || player.isCreative())) return;
             ItemStack recipe = new ItemStack(LittleTiles.recipeAdvanced);
             recipe.setTagCompound((NBTTagCompound) nbt.getTag("recipe_nbt"));
             structure.output.inventory.setInventorySlotContents(0, recipe);
@@ -67,6 +67,7 @@ public class PacketStructureNBT extends CreativeCorePacket {
             structure.precision = nbt.getString("precision");
             structure.baseBlock = new ItemStack((NBTTagCompound) nbt.getTag("base_block"));
             structure.useTex = nbt.getBoolean("use_tex");
+            structure.useMtl = nbt.getBoolean("use_mtl");
         }
     }
 }

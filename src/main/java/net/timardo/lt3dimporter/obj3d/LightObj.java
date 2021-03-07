@@ -47,7 +47,7 @@ public class LightObj implements Obj {
     private final List<ObjFace> faces;
 
     /**
-     * Group stuff, not something I will need.
+     * Group stuff, gonna use it now.
      */
     private final List<ObjGroup> groups;
     private final List<ObjGroup> materialGroups;
@@ -63,7 +63,6 @@ public class LightObj implements Obj {
     private LightObjGroup activeMaterialGroup = null;
     private String activeMaterialGroupName = null;
     
-    public List<Triangle> triangles;
     public double[] boxCoords; // [maxX, maxY, maxZ, minX, minY, minZ]
     private double[] boxSize;
     private boolean isFinal;
@@ -82,7 +81,6 @@ public class LightObj implements Obj {
         this.materialGroupMap = new LinkedHashMap<String, LightObjGroup>();
         this.startedGroupNames = new HashMap<ObjFace, Set<String>>();
         this.startedMaterialGroupNames = new HashMap<ObjFace, String>();
-        this.triangles = new ArrayList<Triangle>(); 
         this.boxCoords = new double[] {
                 -Double.MAX_VALUE, // maxX
                 -Double.MAX_VALUE, // maxY
@@ -307,22 +305,22 @@ public class LightObj implements Obj {
         
         this.faces.add(face);
         
-        if (this.activeMaterialGroup != null) {
-            this.activeMaterialGroup.addFace(face);
-        }
-        
         for (LightObjGroup group : this.activeGroups) {
             group.addFace(face);
         }
         
-        if (face.getNumVertices() > 3 && this.isFinal) return; // only work with triangles
-        
-        Triangle t = new Triangle(this.getVertex(face.getVertexIndex(0)), this.getVertex(face.getVertexIndex(1)), this.getVertex(face.getVertexIndex(2)));
-        
-        if (face.containsTexCoordIndices())
-            t.addTexCoords(this.getTexCoord(face.getTexCoordIndex(0)), this.getTexCoord(face.getTexCoordIndex(1)), this.getTexCoord(face.getTexCoordIndex(2)));
-        
-        this.triangles.add(t); // add final triangle product of this face to work with
+        if (this.activeMaterialGroup != null) {
+            this.activeMaterialGroup.addFace(face);
+            
+            if (face.getNumVertices() > 3 && this.isFinal) return; // only work with triangles
+            
+            Triangle t = new Triangle(this.getVertex(face.getVertexIndex(0)), this.getVertex(face.getVertexIndex(1)), this.getVertex(face.getVertexIndex(2)));
+            
+            if (face.containsTexCoordIndices())
+                t.addTexCoords(this.getTexCoord(face.getTexCoordIndex(0)), this.getTexCoord(face.getTexCoordIndex(1)), this.getTexCoord(face.getTexCoordIndex(2)));
+            
+            this.activeMaterialGroup.triangles.add(t); // add final triangle product of this face to work with
+        }
     }
     
 

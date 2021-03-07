@@ -1,14 +1,17 @@
 package net.timardo.lt3dimporter.converter;
 
 import java.util.List;
+import java.util.Map;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.io.FileNotFoundException;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.lwjgl.util.Color;
 
@@ -19,25 +22,24 @@ import com.creativemd.littletiles.common.tile.math.vec.LittleVec;
 import com.creativemd.littletiles.common.tile.preview.LittlePreview;
 import com.creativemd.littletiles.common.util.grid.LittleGridContext;
 
+import de.javagl.obj.Mtl;
+import de.javagl.obj.MtlReader;
 import de.javagl.obj.ObjReader;
 import de.javagl.obj.ObjUtils;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagIntArray;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.timardo.lt3dimporter.LT3DImporter;
 import net.timardo.lt3dimporter.littlestructure.ModelImporter;
 import net.timardo.lt3dimporter.network.PacketStructureNBT;
 import net.timardo.lt3dimporter.obj3d.LightObj;
+import net.timardo.lt3dimporter.obj3d.LightObjGroup;
 
 public class Converter implements Runnable {
     
-    private static final int BASE_COLOR = ColorUtils.RGBToInt(new Vec3i(255, 255, 255));
     private String model;
     private String tex;
     private Color col;
@@ -46,10 +48,11 @@ public class Converter implements Runnable {
     private float precision;
     private ItemStack base;
     private boolean isTex;
+    private boolean useMtl;
     private EntityPlayer player;
     private ModelImporter structure;
     
-    public Converter(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture, /*ModelImporterGui parent,*/ EntityPlayer player, ModelImporter s) {
+    public Converter(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture, boolean useMtl, EntityPlayer player, ModelImporter s) {
         this.model = modelFile;
         this.tex = texName;
         this.col = color;
@@ -58,6 +61,7 @@ public class Converter implements Runnable {
         this.precision = minprecision;
         this.base = baseBlock;
         this.isTex = texture;
+        this.useMtl = useMtl;
         this.player = player;
         this.structure = s;
     }
@@ -66,7 +70,7 @@ public class Converter implements Runnable {
     public void run() {
         NBTTagCompound tag = null;
         
-        if (isTex && tex.isEmpty()) {
+        if (this.isTex && tex.isEmpty() && !this.useMtl) {
             postMessage(TextFormatting.RED + "Empty texture field!");
             return;
         }
@@ -110,40 +114,122 @@ public class Converter implements Runnable {
         
         try {
             obj = (LightObj) ObjReader.read(objInputStream, new LightObj());
-        } catch (IOException e) { 
+        } catch (IOException e) {
             LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
             throw new ImportException("Unreadable model file! Is it in obj format?");
         }
-        
+
         obj = ObjUtils.triangulate(obj, new LightObj(true));
         
         try {
             objInputStream.close();
         } catch (IOException | NullPointerException e) {
-            LT3DImporter.logger.error("Error closing the stream! If you are getting this error too often, please, open an issue on GitHub (link on CurseForge). Include this info:" + System.lineSeparator() + ExceptionUtils.getStackTrace(e));
-            postMessage(TextFormatting.RED + "Error closing the stream! Check log!");
+            LT3DImporter.logger.error("Error closing the objInputStream! If you are getting this error too often, please, open an issue on GitHub (link on CurseForge). Include this info:" + System.lineSeparator() + ExceptionUtils.getStackTrace(e));
+            postMessage(TextFormatting.RED + "Error closing the objInputStream! Check log!");
         }
         
-        Texture tex = new ColoredTexture(BASE_COLOR);
+        Map<String, Texture> texMap = new HashMap<String, Texture>(); // mapping material to texture
+        
+        for (int i = 0; i < obj.getNumMaterialGroups(); i++) {
+            LightObjGroup g = (LightObjGroup) obj.getMaterialGroup(i);
+            
+            if (!this.isTex) {
+                texMap.put(g.getName(), new ColoredTexture(ColorUtils.RGBAToInt(this.col))); // all materials have the same texture
+            } else {
+                if (this.useMtl) {
+                    
+                }
+            }
+        }
         
         if (this.isTex) {
-            try {
-                tex = new NormalTexture(this.tex);
-            } catch (IOException e) {
-                LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
-                throw new ImportException("Error loading texture file! Is it in supported format? (JPEG, PNG, BMP)");
+            if (this.useMtl) {
+                List<Mtl> mtls = new ArrayList<Mtl>(); // in most cases the MTL file should be only one
+                String rootDir = FilenameUtils.getFullPath(new File(this.model).getAbsolutePath());
+                
+                for (String fileName : obj.getMtlFileNames())
+                {
+                    InputStream stream = null;
+                    
+                    try {
+                        stream = new FileInputStream(rootDir + fileName);
+                    } catch (FileNotFoundException e) {
+                        LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
+                        throw new ImportException("One or more MTL files declared in the obj file do not exist!");
+                    }
+                    
+                    List<Mtl> mtls0 = null;
+                    
+                    try {
+                        mtls0 = MtlReader.read(stream);
+                    } catch (IOException e) {
+                        LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
+                        throw new ImportException("There was a problem reading an MTL file, check log!");
+                    }
+                    
+                    try {
+                        stream.close();
+                    } catch (IOException | NullPointerException e) {
+                        LT3DImporter.logger.error("Error closing the stream! If you are getting this error too often, please, open an issue on GitHub (link on CurseForge). Include this info:" + System.lineSeparator() + ExceptionUtils.getStackTrace(e));
+                        postMessage(TextFormatting.RED + "Error closing the stream! Check log!");
+                    }
+                    
+                    mtls.addAll(mtls0);
+                }
+                
+                if (mtls.isEmpty()) {
+                    throw new ImportException("No MTL entry declared in this obj file!");
+                }
+                
+                Map<String, Mtl> mtlMap = new HashMap<String, Mtl>();
+                
+                for (Mtl mtl : mtls) {
+                    if (mtlMap.containsKey(mtl.getName())) {
+                        throw new ImportException("Duplicate material found in declared MTL files!");
+                    }
+                    
+                    mtlMap.put(mtl.getName(), mtl);
+                }
+                
+                for (int i = 0; i < obj.getNumMaterialGroups(); i++) {
+                    String material = ((LightObjGroup) obj.getMaterialGroup(i)).getName();
+                    try {
+                        texMap.put(material, new MtlTexture(mtlMap.get(material), rootDir));
+                    } catch (IOException e) {
+                        LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
+                        throw new ImportException("Error loading one or more texture files declared in the MTL file! Is it in supported format? (JPEG, PNG, BMP)");
+                    }
+                }
+            } else {
+                try {
+                    Texture tex = new NormalTexture(this.tex);
+                
+                    for (int i = 0; i < obj.getNumMaterialGroups(); i++) {
+                        texMap.put(((LightObjGroup) obj.getMaterialGroup(i)).getName(), tex); // all materials have the same texture
+                    }
+                } catch (IOException e) {
+                    LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
+                    throw new ImportException("Error loading texture file! Is it in supported format? (JPEG, PNG, BMP)");
+                }
             }
         } else {
-            tex = new ColoredTexture(ColorUtils.RGBAToInt(this.col));
+            Texture tex = new ColoredTexture(ColorUtils.RGBAToInt(this.col));
+            
+            for (int i = 0; i < obj.getNumMaterialGroups(); i++) { // one condition + several loops for better efficiency
+                texMap.put(((LightObjGroup) obj.getMaterialGroup(i)).getName(), tex); // all materials have the same color
+            }
         }
         
         double[] s = obj.getSides();
         double ratio = this.size / Math.max(s[0], Math.max(s[1], s[2]));
         LittleGridContext context = LittleGridContext.get(grid);
-        ConvertedModel outputModel = new ConvertedModel(tex, context, obj, ratio, this.base);
-
-        for (Triangle t : obj.triangles) {
-            t.calcBlocks(this.precision, ratio, outputModel);
+        ConvertedModel outputModel = new ConvertedModel(texMap, context, obj, ratio, this.base);
+        
+        for (int i = 0; i < obj.getNumMaterialGroups(); i++) {
+            LightObjGroup group = (LightObjGroup) obj.getMaterialGroup(i);
+            
+            for (Triangle t : group.triangles)
+                t.calcBlocks(this.precision, ratio, outputModel, group.getName());
         }
         
         /*if (tex instanceof ColoredTexture) // TODO check if this actually helps in terms of placing, RAM and rendering performance
@@ -163,7 +249,7 @@ public class Converter implements Runnable {
      */
     private NBTTagCompound fastSavePreview(ConvertedModel model) {
         NBTTagCompound ret = new NBTTagCompound();
-        model.previews.getContext().set(ret);
+        model.context.set(ret);
         
         int minX = (int) Math.round(model.obj.boxCoords[3] * model.ratio);
         int minY = (int) Math.round(model.obj.boxCoords[4] * model.ratio);
@@ -175,20 +261,8 @@ public class Converter implements Runnable {
         new LittleVec(maxX - minX, maxY - minY, maxZ - minZ).writeToNBT("size", ret);
         new LittleVec(minX, minY, minZ).writeToNBT("min", ret); // TODO set base point to center of the object with min Y
         
-        if (model.previews.totalSize() >= LittlePreview.lowResolutionMode) { // TODO do this elsewhere and save some more power
-            NBTTagList list = new NBTTagList();
-            HashSet<BlockPos> positions = new HashSet<>();
-            
-            for (int i = 0; i < model.previews.size(); i++) {
-                BlockPos pos = model.previews.get(i).box.getMinVec().getBlockPos(model.previews.getContext());
-                
-                if (!positions.contains(pos)) {
-                    positions.add(pos);
-                    list.appendTag(new NBTTagIntArray(new int[] { pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ() }));
-                }
-            }
-            
-            ret.setTag("pos", list);
+        if (model.blocks.size() >= LittlePreview.lowResolutionMode) {
+            ret.setTag("pos", model.previews);
         } else
             ret.removeTag("pos");
         
@@ -220,7 +294,7 @@ public class Converter implements Runnable {
         }
         
         ret.setTag("tiles", list);
-        ret.setInteger("count", model.previews.size());
+        ret.setInteger("count", model.blocks.size());
         
         return ret;
     }

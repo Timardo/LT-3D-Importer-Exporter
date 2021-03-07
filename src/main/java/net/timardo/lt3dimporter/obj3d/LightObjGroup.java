@@ -5,6 +5,7 @@ import java.util.List;
 
 import de.javagl.obj.ObjFace;
 import de.javagl.obj.ObjGroup;
+import net.timardo.lt3dimporter.converter.Triangle;
 
 public class LightObjGroup implements ObjGroup {
     /**
@@ -16,6 +17,11 @@ public class LightObjGroup implements ObjGroup {
      * The faces in this group
      */
     private List<ObjFace> faces;
+    
+    /**
+     * Triangles in this group
+     */
+    public List<Triangle> triangles;
 
     /**
      * Creates a new ObjGroup with the given name
@@ -24,12 +30,13 @@ public class LightObjGroup implements ObjGroup {
      */
     LightObjGroup(String name) {
         this.name = name;
-        faces = new ArrayList<ObjFace>();
+        this.faces = new ArrayList<ObjFace>();
+        this.triangles = new ArrayList<Triangle>(); 
     }
 
     @Override
     public String getName() {
-        return name;
+        return this.name;
     }
 
     /**
@@ -38,21 +45,21 @@ public class LightObjGroup implements ObjGroup {
      * @param face The face to add
      */
     void addFace(ObjFace face) {
-        faces.add(face);
+        this.faces.add(face);
     }
 
     @Override
     public int getNumFaces() {
-        return faces.size();
+        return this.faces.size();
     }
 
     @Override
     public ObjFace getFace(int index) {
-        return faces.get(index);
+        return this.faces.get(index);
     }
 
     @Override
     public String toString() {
-        return "ObjGroup[name=" + name + ",#faces=" + faces.size() + "]";
+        return "ObjGroup[name=" + this.name + ",#faces=" + this.faces.size() + "]";
     }
 }

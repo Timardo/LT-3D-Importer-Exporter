@@ -28,6 +28,7 @@ public class ModelImporterGui extends SubGui {
     public GuiColorPicker colorPicker;
     public GuiCheckBox useTex;
     public GuiCheckBox useColor;
+    public GuiCheckBox useMtl;
     public GuiStackSelectorAll baseBlock;
     public GuiTextfield maxSize;
     public ModelImporter parentStructure;
@@ -56,12 +57,12 @@ public class ModelImporterGui extends SubGui {
         this.minPrecision.text = this.parentStructure.precision;
         addControl(this.minPrecision);
         
-        this.baseBlock = new GuiStackSelectorAll("baseblock", 5, 30, 106, getPlayer(), LittleSubGuiUtils.getCollector(getPlayer()), true); // TODO ability to select anything in survival
+        this.baseBlock = new GuiStackSelectorAll("baseblock", 5, 30, 106, getPlayer(), new GuiStackSelectorAll.CreativeCollector(new LittleSubGuiUtils.LittleBlockSelector()), true);
         this.baseBlock.setCustomTooltip("Base block");
         this.baseBlock.setSelectedForce(this.parentStructure.baseBlock);
         addControl(this.baseBlock);
         
-        this.useTex = new GuiCheckBox("useTex", "Use Texture", 141, 27, true) {
+        this.useTex = new GuiCheckBox("useTex", "Use Texture", 141, 27, false) {
             @Override
             public boolean mousePressed(int posX, int posY, int button) {
                 if (button != -21) playSound(SoundEvents.UI_BUTTON_CLICK);
@@ -72,6 +73,7 @@ public class ModelImporterGui extends SubGui {
                 raiseEvent(new GuiControlChangedEvent(this)); // TODO find out how these events work and update all viewers of this structure's GUI when something changes
                 removeControl(colorPicker);
                 addControl(texFile);
+                addControl(useMtl);
                 return true;
             }
         };
@@ -86,7 +88,25 @@ public class ModelImporterGui extends SubGui {
                 useColor.value = true;
                 raiseEvent(new GuiControlChangedEvent(this));
                 removeControl(texFile);
+                removeControl(useMtl);
                 addControl(colorPicker);
+                return true;
+            }
+        };
+        
+        this.useMtl = new GuiCheckBox("useMtl", "Use .mtl File", 2, 77, false) {
+            @Override
+            public boolean mousePressed(int posX, int posY, int button) {
+                if (button != -21) playSound(SoundEvents.UI_BUTTON_CLICK);
+                
+                this.value = !this.value;
+                
+                if (useMtl.value)
+                    texFile.enabled = false;
+                else 
+                    texFile.enabled = true;
+                
+                raiseEvent(new GuiControlChangedEvent(this));
                 return true;
             }
         };
@@ -98,7 +118,6 @@ public class ModelImporterGui extends SubGui {
         this.texFile.maxLength = 32768;
         this.texFile.setCustomTooltip("Path to texture");
         this.texFile.text = this.parentStructure.texFile;
-        addControl(this.texFile);
         
         this.colorPicker = new GuiColorPicker("colorpicker", 4, 55, ColorUtils.IntToRGBA(this.parentStructure.color), LittleTiles.CONFIG.isTransparencyEnabled(getPlayer()), LittleTiles.CONFIG.getMinimumTransparency(getPlayer()));
         
@@ -119,6 +138,7 @@ public class ModelImporterGui extends SubGui {
                     Float.parseFloat(minPrecision.text),
                     baseBlock.getSelected(),
                     useTex.value,
+                    useMtl.value,
                     getPlayer(),
                     parentStructure
                 );
@@ -133,6 +153,9 @@ public class ModelImporterGui extends SubGui {
             this.useTex.mousePressed(0, 0, -21);
         else
             this.useColor.mousePressed(0, 0, -21);
+        
+        if (parentStructure.useMtl)
+            this.useMtl.mousePressed(0, 0, -21);
     }
     
     @Override
@@ -154,6 +177,7 @@ public class ModelImporterGui extends SubGui {
         packetNBT.setString("precision", this.minPrecision.text);
         packetNBT.setTag("base_block", this.baseBlock.getSelected().serializeNBT());
         packetNBT.setBoolean("use_tex", this.useTex.value);
+        packetNBT.setBoolean("use_mtl", this.useMtl.value);
         nbtPacket.setNBT(packetNBT);
         PacketHandler.sendPacketToServer(nbtPacket);
     }

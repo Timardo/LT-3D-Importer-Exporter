@@ -28,6 +28,7 @@ public class ModelImporter extends LittleStructurePremade {
     public String gridSize = ItemMultiTiles.currentContext.size + "";
     public String precision = "0.7";
     public String texFile;
+    public boolean useMtl = false;
     public int color = -1;
     public boolean useTex = true;
     public String maxSize = this.gridSize;
@@ -44,6 +45,7 @@ public class ModelImporter extends LittleStructurePremade {
         this.gridSize = nbt.hasKey("lt_grid") ? nbt.getString("lt_grid") : this.gridSize;
         this.precision = nbt.hasKey("lt_prec") ? nbt.getString("lt_prec") : this.precision;
         this.texFile = nbt.getString("lt_tex");
+        this.useMtl = nbt.hasKey("lt_mtl") ? nbt.getBoolean("lt_mtl") : this.useMtl;
         this.color = nbt.hasKey("lt_col") ? nbt.getInteger("lt_col") : this.color;
         this.useTex = nbt.hasKey("lt_useTex") ? nbt.getBoolean("lt_useTex") : this.useTex;
         this.maxSize = nbt.hasKey("lt_size") ? nbt.getString("lt_size") : this.maxSize;
@@ -59,6 +61,7 @@ public class ModelImporter extends LittleStructurePremade {
         nbt.setString("lt_tex", this.texFile);
         nbt.setInteger("lt_col", this.color);
         nbt.setBoolean("lt_useTex", this.useTex);
+        nbt.setBoolean("lt_mtl", this.useMtl);
         nbt.setString("lt_size", this.maxSize);
         
         if (!this.output.inventory.getStackInSlot(0).isEmpty())
@@ -70,7 +73,7 @@ public class ModelImporter extends LittleStructurePremade {
     @Override
     public boolean onBlockActivated(World world, LittleTile tile, BlockPos pos, EntityPlayer player, EnumHand hand, @Nullable ItemStack itemInHand, EnumFacing side, float hitX, float hitY, float hitZ, LittleActionActivated action) throws LittleActionException {
         if (!world.isRemote) {
-            this.updateStructure(); // notifies clients about any changes so they will always have correct data 
+            this.sendUpdatePacket(); // notifies clients about any changes so they will always have correct data 
             LittleStructureGuiHandler.openGui("modelimporter", new NBTTagCompound(), player, this);
         }
         
