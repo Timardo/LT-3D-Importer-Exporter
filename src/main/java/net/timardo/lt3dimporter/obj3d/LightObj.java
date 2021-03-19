@@ -91,6 +91,7 @@ public class LightObj implements Obj {
         };
         this.setActiveGroupNames(Arrays.asList("default"));
         this.getGroupInternal("default");
+        this.activeMaterialGroup = this.getMaterialGroupInternal("default");
         this.isFinal = false;
     }
     
