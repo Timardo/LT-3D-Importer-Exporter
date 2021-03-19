@@ -5,35 +5,7 @@ Unbelievably, it requires LittleTiles as well as CreativeCore mods to run. Go fi
 
 The only limit with this mod is your computer (and Minecraft)
 
-## But.. HOW?
-
-![Converted](https://i.imgur.com/7x1chXW.png)
-
-In a creative inventory, find LittleTiles tab and find a new premade structure called Little 3D Importer. You can also craft it by using the recipe shown below.
-
-![Recipe](https://i.imgur.com/WUeV1ov.png?)
-
-Place it down and click on it - a pretty self explanatory GUI will open. Every text field has a tooltip to understand what it does.
-
-- You can either use a texture or go with a custom color
-
-- When using the texture option, ticking Use MTL file will force the mod to use MTL entry declared in the model file for all textures and colors
-
-- Base block can also be set to whatever block you like - default is plain LittleTiles Dyable Block
-
-- Grid will determine the size of the grid to be used
-
-- Precision text box is an advanced parameter that can help smooth the converted structure. Lower values mean higher precision. It is not recommended to set values above `0.9` as that can cause little holes in the structure. As of now, there is no recommended lowest value. Since `0.05` is a default and values below `0.01` have no noticeable effect on the output structure there is no reason to go lower
-
-- Max size is the maximum length/height or thickness of the structure, whichever has the highest value. This value is in LittleTiles, not vanilla Minecraft blocks. For example, a dog model with grid `16` and max size `256` (which is `16*16`) will never be longer/thicker or taller than `16` vanilla blocks.
-
-
-It is also required to have an empty Blueprint in the output slot (next to the Import button) if working in survival mode.
-
-
-Proper wiki is coming soon.
-
-Please be reasonable and do not import models with large max size numbers (above 1000), it can take up to an hour to place it, depending on your PC.
+For more information on how to use this mod [visit the wiki.](https://github.com/Timardo/LT-3D-Importer/wiki)
 
 ## Releases
 GitHub - https://github.com/Timardo/LT-3D-Importer/releases
