@@ -14,7 +14,6 @@ import net.timardo.lt3dimporter.LT3DImporter;
 import net.timardo.lt3dimporter.littlestructure.ModelImporter;
 
 public class PacketStructureNBT extends CreativeCorePacket {
-
     private NBTTagCompound nbt;
     
     public PacketStructureNBT() {}

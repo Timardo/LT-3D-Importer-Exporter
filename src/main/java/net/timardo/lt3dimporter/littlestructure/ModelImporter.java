@@ -23,10 +23,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class ModelImporter extends LittleStructurePremade {
-    
     public String model;
     public String gridSize = ItemMultiTiles.currentContext.size + "";
-    public String precision = "0.7";
+    public String precision = "0.05";
     public String texFile;
     public boolean useMtl = false;
     public int color = -1;
@@ -64,8 +63,9 @@ public class ModelImporter extends LittleStructurePremade {
         nbt.setBoolean("lt_mtl", this.useMtl);
         nbt.setString("lt_size", this.maxSize);
         
-        if (!this.output.inventory.getStackInSlot(0).isEmpty())
+        if (!this.output.inventory.getStackInSlot(0).isEmpty()) {
             nbt.setTag("lt_slot", this.output.inventory.getStackInSlot(0).serializeNBT());
+        }
         
         nbt.setTag("lt_base", this.baseBlock.serializeNBT());
     }
@@ -73,7 +73,7 @@ public class ModelImporter extends LittleStructurePremade {
     @Override
     public boolean onBlockActivated(World world, LittleTile tile, BlockPos pos, EntityPlayer player, EnumHand hand, @Nullable ItemStack itemInHand, EnumFacing side, float hitX, float hitY, float hitZ, LittleActionActivated action) throws LittleActionException {
         if (!world.isRemote) {
-            this.sendUpdatePacket(); // notifies clients about any changes so they will always have correct data 
+            this.sendUpdatePacket(); // notifies clients about any changes so they will always have correct data // TODO update all viewers with every change
             LittleStructureGuiHandler.openGui("modelimporter", new NBTTagCompound(), player, this);
         }
         

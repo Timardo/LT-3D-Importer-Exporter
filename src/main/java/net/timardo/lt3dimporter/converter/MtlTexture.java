@@ -21,10 +21,11 @@ public class MtlTexture implements Texture {
     private BufferedImage texture;
 
     public MtlTexture(Mtl mtlFile, String root) throws IOException {
-        if (mtlFile.getMapKd() != null)
+        if (mtlFile.getMapKd() != null) {
             this.texture = ImageIO.read(new File(root + mtlFile.getMapKd()));
-        else
+        } else {
             this.texture = null;
+        }
         
         this.opacity = mtlFile.getD();
         this.diffuse = new float[] { MathHelper.clamp(mtlFile.getKd().getX(), 0, 1), MathHelper.clamp(mtlFile.getKd().getY(), 0, 1), MathHelper.clamp(mtlFile.getKd().getZ(), 0, 1) };
@@ -42,11 +43,8 @@ public class MtlTexture implements Texture {
         double nU = uv[0] % 1.0F;
         double nV = uv[1] % 1.0F;
         
-        if (nU < 0.0F)
-            nU += 1.0F;
-        
-        if (nV < 0.0F)
-            nV += 1.0F;
+        if (nU < 0.0F) nU += 1.0F;
+        if (nV < 0.0F) nV += 1.0F;
         
         int x = (int)(nU * (this.texture.getWidth() - 1));
         int y = (int)((1.0D - nV) * (this.texture.getHeight() - 1));

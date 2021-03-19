@@ -1,7 +1,6 @@
 package net.timardo.lt3dimporter.converter;
 
 public class ColoredTexture implements Texture {
-    
     public int color;
     
     public ColoredTexture(int colorIn) {

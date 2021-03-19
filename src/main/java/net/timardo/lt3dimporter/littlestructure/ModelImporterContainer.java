@@ -6,7 +6,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class ModelImporterContainer extends SubContainer {
-
     public ModelImporter parentStructure;
     
     public ModelImporterContainer(EntityPlayer player, ModelImporter structure) {

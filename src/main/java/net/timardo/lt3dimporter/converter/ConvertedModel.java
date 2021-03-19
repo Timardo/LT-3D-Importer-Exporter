@@ -22,7 +22,6 @@ import net.minecraft.util.math.BlockPos;
 import net.timardo.lt3dimporter.obj3d.LightObj;
 
 public class ConvertedModel {
-    
     public LinkedHashMap<Integer, List<LittlePreview>> colorMap;
     public Set<Long> blocks;
     public Map<String, Texture> textureMap;
@@ -65,11 +64,10 @@ public class ConvertedModel {
             pList.add(tile.getPreviewTile());
         }
 
-        
-        BlockPos pos = tile.getPreviewTile().box.getMinVec().getBlockPos(context);
+        BlockPos pos = tile.getPreviewTile().box.getMinVec().getBlockPos(this.context);
         
         if (!this.posSet.contains(pos)) {
-            posSet.add(pos);
+            this.posSet.add(pos);
             this.previews.appendTag(new NBTTagIntArray(new int[] { pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ() }));
         }
     }

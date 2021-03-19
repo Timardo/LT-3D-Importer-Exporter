@@ -20,7 +20,6 @@ import net.timardo.lt3dimporter.converter.Converter;
 import net.timardo.lt3dimporter.network.PacketStructureNBT;
 
 public class ModelImporterGui extends SubGui {
-    
     public GuiTextfield modelFile;
     public GuiComboBox gridSizes;
     public GuiTextfield minPrecision;
@@ -63,6 +62,7 @@ public class ModelImporterGui extends SubGui {
         addControl(this.baseBlock);
         
         this.useTex = new GuiCheckBox("useTex", "Use Texture", 141, 27, false) {
+            
             @Override
             public boolean mousePressed(int posX, int posY, int button) {
                 if (button != -21) playSound(SoundEvents.UI_BUTTON_CLICK);
@@ -74,11 +74,13 @@ public class ModelImporterGui extends SubGui {
                 removeControl(colorPicker);
                 addControl(texFile);
                 addControl(useMtl);
+                
                 return true;
             }
         };
         
         this.useColor = new GuiCheckBox("useColor", "Use Color", 141, 40, false) {
+            
             @Override
             public boolean mousePressed(int posX, int posY, int button) {
                 if (button != -21) playSound(SoundEvents.UI_BUTTON_CLICK);
@@ -90,23 +92,27 @@ public class ModelImporterGui extends SubGui {
                 removeControl(texFile);
                 removeControl(useMtl);
                 addControl(colorPicker);
+                
                 return true;
             }
         };
         
         this.useMtl = new GuiCheckBox("useMtl", "Use .mtl File", 2, 77, false) {
+            
             @Override
             public boolean mousePressed(int posX, int posY, int button) {
                 if (button != -21) playSound(SoundEvents.UI_BUTTON_CLICK);
                 
                 this.value = !this.value;
                 
-                if (useMtl.value)
+                if (useMtl.value) {
                     texFile.enabled = false;
-                else 
+                } else { 
                     texFile.enabled = true;
+                }
                 
                 raiseEvent(new GuiControlChangedEvent(this));
+                
                 return true;
             }
         };
@@ -126,7 +132,7 @@ public class ModelImporterGui extends SubGui {
         addControl(this.maxSize);
         
         addControl(new GuiButton("convertbutton", "Import!", 144, 80, 42, 14) {
-
+            
             @Override
             public void onClicked(int var1, int var2, int var3) {
                 Converter converter = new Converter(
@@ -149,13 +155,15 @@ public class ModelImporterGui extends SubGui {
             
         });
         
-        if (this.parentStructure.useTex)
+        if (this.parentStructure.useTex) {
             this.useTex.mousePressed(0, 0, -21);
-        else
+        } else {
             this.useColor.mousePressed(0, 0, -21);
+        }
         
-        if (parentStructure.useMtl)
+        if (parentStructure.useMtl) {
             this.useMtl.mousePressed(0, 0, -21);
+        }
     }
     
     @Override

@@ -39,7 +39,6 @@ import net.timardo.lt3dimporter.obj3d.LightObj;
 import net.timardo.lt3dimporter.obj3d.LightObjGroup;
 
 public class Converter implements Runnable {
-    
     private String model;
     private String tex;
     private Color col;
@@ -75,13 +74,17 @@ public class Converter implements Runnable {
             return;
         }
         
+        LT3DImporter.logger.debug("prepare for some waiting..."); // TODO remove this timing thing (in release?)
+        long time = System.currentTimeMillis();
+        
         try {
             tag = convertModelToRecipe();
         } catch (ImportException ie) {
             postMessage(TextFormatting.RED + ie.getReason());
             return;
         }
-
+        
+        LT3DImporter.logger.debug("done in " + (System.currentTimeMillis() - time) + "ms");
         PacketStructureNBT nbtPacket = new PacketStructureNBT();
         NBTTagCompound packetNBT = new NBTTagCompound();
         packetNBT.setBoolean("item", true);
@@ -96,12 +99,13 @@ public class Converter implements Runnable {
     }
 
     /**
-     * Basic algorithm to load, convert, parse and return an Advanced Recipe ItemStack from .obj model
+     * Basic algorithm to load, convert, parse and return an NBT containg the structure from an .obj model
      * 
-     * @return a NBT tag for Advanced Recipe
+     * @return an NBT tag for Blueprint
      */
     private NBTTagCompound convertModelToRecipe() throws ImportException {
         InputStream objInputStream = null;
+        LightObj obj = null;
         
         try {
             objInputStream = new FileInputStream(this.model);
@@ -110,17 +114,13 @@ public class Converter implements Runnable {
             throw new ImportException("Cannot read model file! Does it exist?");
         }
         
-        LightObj obj = null;
-        
         try {
             obj = (LightObj) ObjReader.read(objInputStream, new LightObj());
         } catch (IOException e) {
             LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
-            throw new ImportException("Unreadable model file! Is it in obj format?");
+            throw new ImportException("Unreadable model file! Is it in .obj format?");
         }
 
-        obj = ObjUtils.triangulate(obj, new LightObj(true));
-        
         try {
             objInputStream.close();
         } catch (IOException | NullPointerException e) {
@@ -128,20 +128,9 @@ public class Converter implements Runnable {
             postMessage(TextFormatting.RED + "Error closing the objInputStream! Check log!");
         }
         
+        obj = ObjUtils.triangulate(obj, new LightObj(true));
         Map<String, Texture> texMap = new HashMap<String, Texture>(); // mapping material to texture
-        
-        for (int i = 0; i < obj.getNumMaterialGroups(); i++) {
-            LightObjGroup g = (LightObjGroup) obj.getMaterialGroup(i);
-            
-            if (!this.isTex) {
-                texMap.put(g.getName(), new ColoredTexture(ColorUtils.RGBAToInt(this.col))); // all materials have the same texture
-            } else {
-                if (this.useMtl) {
-                    
-                }
-            }
-        }
-        
+        // texture part
         if (this.isTex) {
             if (this.useMtl) {
                 List<Mtl> mtls = new ArrayList<Mtl>(); // in most cases the MTL file should be only one
@@ -178,7 +167,7 @@ public class Converter implements Runnable {
                 }
                 
                 if (mtls.isEmpty()) {
-                    throw new ImportException("No MTL entry declared in this obj file!");
+                    throw new ImportException("No MTL entry declared in this .obj file!");
                 }
                 
                 Map<String, Mtl> mtlMap = new HashMap<String, Mtl>();
@@ -193,6 +182,7 @@ public class Converter implements Runnable {
                 
                 for (int i = 0; i < obj.getNumMaterialGroups(); i++) {
                     String material = ((LightObjGroup) obj.getMaterialGroup(i)).getName();
+                    
                     try {
                         texMap.put(material, new MtlTexture(mtlMap.get(material), rootDir));
                     } catch (IOException e) {
@@ -219,7 +209,7 @@ public class Converter implements Runnable {
                 texMap.put(((LightObjGroup) obj.getMaterialGroup(i)).getName(), tex); // all materials have the same color
             }
         }
-        
+        // end of texture part
         double[] s = obj.getSides();
         double ratio = this.size / Math.max(s[0], Math.max(s[1], s[2]));
         LittleGridContext context = LittleGridContext.get(grid);
@@ -235,15 +225,12 @@ public class Converter implements Runnable {
         /*if (tex instanceof ColoredTexture) // TODO check if this actually helps in terms of placing, RAM and rendering performance
             BasicCombiner.combinePreviews(tiles);*/
 
-        LT3DImporter.logger.debug("prepare for some waiting..."); // TODO remove this timing thing (in release?)
-        long time = System.currentTimeMillis();
         NBTTagCompound nbt = fastSavePreview(outputModel);
-        LT3DImporter.logger.debug("done in " + (System.currentTimeMillis() - time) + "ms");
         return nbt;
     }
     
     /**
-     *  <b>MUCH</b> faster equivalent of LittlePreview.savePreview which is tweaked a bit to fit the needs of this mod
+     *  <b>MUCH</b> faster equivalent of {@link LittlePreview#savePreview(LittlePreviews, ItemStack)} which is tweaked a bit to fit the needs of this mod
      * 
      * @param model - the model
      */
@@ -263,8 +250,9 @@ public class Converter implements Runnable {
         
         if (model.blocks.size() >= LittlePreview.lowResolutionMode) {
             ret.setTag("pos", model.previews);
-        } else
+        } else {
             ret.removeTag("pos");
+        }
         
         NBTTagList list = new NBTTagList();
         
@@ -277,8 +265,9 @@ public class Converter implements Runnable {
             for (Iterator<LittlePreview> iterator2 = tileList.iterator(); iterator2.hasNext();) {
                 LittlePreview preview = (LittlePreview) iterator2.next();
                 
-                if (groupNBT == null)
+                if (groupNBT == null) {
                     groupNBT = grouping.startNBTGrouping();
+                }
                 
                 grouping.groupNBTTile(groupNBT, preview);
                 iterator2.remove();

@@ -9,7 +9,7 @@ The only limit with this mod is your computer (and Minecraft)
 
 ![Converted](https://i.imgur.com/7x1chXW.png)
 
-In a creative inventory, find LittleTiles tab and find new premade structure called Little 3D Importer. You can also craft it by using recipe shown below.
+In a creative inventory, find LittleTiles tab and find a new premade structure called Little 3D Importer. You can also craft it by using the recipe shown below.
 
 ![Recipe](https://i.imgur.com/WUeV1ov.png?)
 
@@ -23,7 +23,7 @@ Place it down and click on it - a pretty self explanatory GUI will open. Every t
 
 - Grid will determine the size of the grid to be used
 
-- Precision text box is an advanced parameter that can help smooth the converted structure. Lower values mean higher precision. It is not recommended to set values above `0.9` as that can cause little holes in the structure and values below `0.01` have no noticeable effect and can extend the time needed to generate the structure multiple times
+- Precision text box is an advanced parameter that can help smooth the converted structure. Lower values mean higher precision. It is not recommended to set values above `0.9` as that can cause little holes in the structure. As of now, there is no recommended lowest value. Since `0.05` is a default and values below `0.01` have no noticeable effect on the output structure there is no reason to go lower
 
 - Max size is the maximum length/height or thickness of the structure, whichever has the highest value. This value is in LittleTiles, not vanilla Minecraft blocks. For example, a dog model with grid `16` and max size `256` (which is `16*16`) will never be longer/thicker or taller than `16` vanilla blocks.
 
@@ -42,23 +42,22 @@ CurseForge - https://www.curseforge.com/minecraft/mc-mods/littletiles-3d-importe
 
 ## TODO
 
-Add GUI options:
-###
- - resize the model (and see its actual dimensions)
-###
  - Preview the model in its full 3D glory, somehow?
 
- - Ability to rotate the model in a preview state?
+ - Ability to rotate, resize or move precisely the model in a preview state?
+ 
+ - Transform bones or similar parts of a model from supported formats?
 
  - Minimize tiles used? (remove those players cannot actually see)
 
  - Make the importing server friendly
+ 
+ - Add support for more formats (Blockbuster mod?, FBX?)
+ 
+ - Check if there is a way to make it even faster?
 
- - Make it even faster
+ - ~~Make it even faster~~ [Done]
 
- - ~~Parse .mtl files~~ [Done]
-
-Kudos to Fredlllll for [his plugin](https://dev.bukkit.org/projects/print3d). It would take me much more time figuring out how to work
-with textures without it.
+Kudos to Fredlllll for [his plugin](https://dev.bukkit.org/projects/print3d). It would have taken me much more time figuring out how to work with textures without it.
 
 This mod uses [Obj lib](https://github.com/javagl/Obj) for loading obj files.
