@@ -1,6 +1,8 @@
 # LT 3D Importer
 An addon for [Little Tiles Mod](https://www.curseforge.com/minecraft/mc-mods/littletiles) that makes building even more exciting!
-This mod allows you to import a 3D model (currently only in .obj format) as a Little Tiles structure
+
+This mod allows you to import a 3D model (currently only in .obj format) as a Little Tiles structure.
+
 Unbelievably, it requires LittleTiles as well as CreativeCore mods to run. Go find them on CurseForge if you don't have them yet.
 
 The only limit with this mod is your computer (and Minecraft)
