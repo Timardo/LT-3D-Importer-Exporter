@@ -26,11 +26,9 @@ CurseForge - https://www.curseforge.com/minecraft/mc-mods/littletiles-3d-importe
 
  - Make the importing server friendly
  
- - Add support for more formats (Blockbuster mod?, FBX?)
+ - Add support for more formats (Blockbuster mod?, FBX?, VOX?)
  
  - Check if there is a way to make it even faster?
-
- - ~~Make it even faster~~ [Done]
 
 Kudos to Fredlllll for [his plugin](https://dev.bukkit.org/projects/print3d). It would have taken me much more time figuring out how to work with textures without it.
 
