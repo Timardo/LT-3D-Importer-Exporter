@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,10 +27,15 @@ import de.javagl.obj.Mtl;
 import de.javagl.obj.MtlReader;
 import de.javagl.obj.ObjReader;
 import de.javagl.obj.ObjUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.IBakedModel;
+import net.minecraft.client.renderer.block.model.ModelManager;
+import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.util.registry.IRegistry;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.timardo.lt3dimporter.LT3DImporter;
@@ -92,6 +98,23 @@ public class Converter implements Runnable {
         packetNBT.setTag("recipe_nbt", tag);
         nbtPacket.setNBT(packetNBT);
         PacketHandler.sendPacketToServer(nbtPacket);
+        /*try {
+        Minecraft minecraft = Minecraft.getMinecraft();
+        Field modelManager = Minecraft.class.getDeclaredField("modelManager"); // field_175617_aL, modelManager
+        modelManager.setAccessible(true);
+        ModelManager mm = (ModelManager) modelManager.get(minecraft);
+        Field registry = ModelManager.class.getDeclaredField("modelRegistry"); // field_174958_a, modelRegistry
+        registry.setAccessible(true);
+        IRegistry<ModelResourceLocation, IBakedModel> mr = (IRegistry<ModelResourceLocation, IBakedModel>) registry.get(mm);
+        IBakedModel model = null;
+        for (ModelResourceLocation pair : mr.getKeys()) {
+            if (pair.getResourceDomain().equals("lt3dimporter") && pair.getResourcePath().equals("modelblock"));
+            model = mr.getObject(pair);
+        }
+        postMessage("models:" + model.toString());
+        } catch (Exception e) {
+            
+        }*/
     }
 
     private void postMessage(String msg) {
@@ -106,6 +129,9 @@ public class Converter implements Runnable {
     private NBTTagCompound convertModelToRecipe() throws ImportException {
         InputStream objInputStream = null;
         LightObj obj = null;
+        
+        if (this.model.startsWith("\"") || this.model.endsWith("\""))
+            this.model = this.model.replace("\"", "");
         
         try {
             objInputStream = new FileInputStream(this.model);

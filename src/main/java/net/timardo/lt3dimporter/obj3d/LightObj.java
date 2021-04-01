@@ -91,7 +91,6 @@ public class LightObj implements Obj {
         };
         this.setActiveGroupNames(Arrays.asList("default"));
         this.getGroupInternal("default");
-        this.activeMaterialGroup = this.getMaterialGroupInternal("default");
         this.isFinal = false;
     }
     
@@ -312,18 +311,21 @@ public class LightObj implements Obj {
         
         if (this.activeMaterialGroup != null) {
             this.activeMaterialGroup.addFace(face);
-            
-            if (face.getNumVertices() > 3 && this.isFinal) return; // only work with triangles
-            
-            Triangle t = new Triangle(this.getVertex(face.getVertexIndex(0)), this.getVertex(face.getVertexIndex(1)), this.getVertex(face.getVertexIndex(2)));
-            
-            if (face.containsTexCoordIndices())
-                t.addTexCoords(this.getTexCoord(face.getTexCoordIndex(0)), this.getTexCoord(face.getTexCoordIndex(1)), this.getTexCoord(face.getTexCoordIndex(2)));
-            
-            this.activeMaterialGroup.triangles.add(t); // add final triangle product of this face to work with
+        } else {
+            this.activeMaterialGroup = this.getMaterialGroupInternal("default");
+            this.activeMaterialGroupName = "default";
+            this.activeMaterialGroup.addFace(face);
         }
+        
+        if (face.getNumVertices() > 3 && this.isFinal) return; // only work with triangles
+        
+        Triangle t = new Triangle(this.getVertex(face.getVertexIndex(0)), this.getVertex(face.getVertexIndex(1)), this.getVertex(face.getVertexIndex(2)));
+        
+        if (face.containsTexCoordIndices())
+            t.addTexCoords(this.getTexCoord(face.getTexCoordIndex(0)), this.getTexCoord(face.getTexCoordIndex(1)), this.getTexCoord(face.getTexCoordIndex(2)));
+        
+        this.activeMaterialGroup.triangles.add(t); // add final triangle product of this face to work with
     }
-    
 
     @Override
     public void addFace(int... v) {

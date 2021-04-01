@@ -22,7 +22,7 @@ public class MtlTexture implements Texture {
 
     public MtlTexture(Mtl mtlFile, String root) throws IOException {
         if (mtlFile.getMapKd() != null) {
-            this.texture = ImageIO.read(new File(root + mtlFile.getMapKd()));
+            this.texture = ImageIO.read(new File((mtlFile.getMapKd().contains(":") ? "" : root) + mtlFile.getMapKd()));
         } else {
             this.texture = null;
         }
