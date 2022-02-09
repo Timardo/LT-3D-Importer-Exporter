@@ -90,7 +90,7 @@ public class Triangle {
      * @param p1 - first point (start of the vector)
      * @param p2 - second point
      * @param n - value to be scaled the vector to
-     * @param p - 0 for scaling X, 1 for Y and 2 for Z
+     * @param p - 0 for scaling X, 1 for Y and 2 for Z, screw Enums
      * 
      * @return new {@link Vec3d} of a point between p1 and p2 scaled with chosen coordinate to n
      * @throws ImportException 
@@ -108,7 +108,7 @@ public class Triangle {
             if (t >= 0.0D && t <= 1.0D) {// we don't want to go out of the vector
                 return new Vec3d(p1.x + dX * t, p1.y + dY * t, p1.z + dZ * t);
             } else {
-                LT3DImporter.logger.error("Error getting intemediate value! Expected t from <0,1>, got " + t + " base points, 'p' and 'n': " + p1 + ", " + p2 + ", " + p + ", " + n);
+                LT3DImporter.logger.error("Error getting intermediate value! Expected t from <0,1>, got " + t + ". Base points, 'p' and 'n': " + p1 + ", " + p2 + ", " + p + ", " + n);
                 throw new ImportException("An error occured while converting model, check log for more information!"); // this should never happen, but safety first
             }
         }

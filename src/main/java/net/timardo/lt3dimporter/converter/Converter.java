@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,22 +26,18 @@ import de.javagl.obj.Mtl;
 import de.javagl.obj.MtlReader;
 import de.javagl.obj.ObjReader;
 import de.javagl.obj.ObjUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.client.renderer.block.model.ModelManager;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.registry.IRegistry;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import net.timardo.lt3dimporter.LT3DImporter;
 import net.timardo.lt3dimporter.littlestructure.ModelImporter;
 import net.timardo.lt3dimporter.network.PacketStructureNBT;
 import net.timardo.lt3dimporter.obj3d.LightObj;
 import net.timardo.lt3dimporter.obj3d.LightObjGroup;
+
+import static net.timardo.lt3dimporter.Utils.*;
 
 public class Converter implements Runnable {
     private String model;
@@ -76,7 +71,7 @@ public class Converter implements Runnable {
         NBTTagCompound tag = null;
         
         if (this.isTex && tex.isEmpty() && !this.useMtl) {
-            postMessage(TextFormatting.RED + "Empty texture field!");
+            postMessage(this.player, TextFormatting.RED + "Empty texture field!");
             return;
         }
         
@@ -86,7 +81,7 @@ public class Converter implements Runnable {
         try {
             tag = convertModelToRecipe();
         } catch (ImportException ie) {
-            postMessage(TextFormatting.RED + ie.getReason());
+            postMessage(this.player, TextFormatting.RED + ie.getReason());
             return;
         }
         
@@ -97,28 +92,7 @@ public class Converter implements Runnable {
         packetNBT.setTag("loc", new StructureLocation(this.structure).write());
         packetNBT.setTag("recipe_nbt", tag);
         nbtPacket.setNBT(packetNBT);
-        PacketHandler.sendPacketToServer(nbtPacket);
-        /*try {
-        Minecraft minecraft = Minecraft.getMinecraft();
-        Field modelManager = Minecraft.class.getDeclaredField("modelManager"); // field_175617_aL, modelManager
-        modelManager.setAccessible(true);
-        ModelManager mm = (ModelManager) modelManager.get(minecraft);
-        Field registry = ModelManager.class.getDeclaredField("modelRegistry"); // field_174958_a, modelRegistry
-        registry.setAccessible(true);
-        IRegistry<ModelResourceLocation, IBakedModel> mr = (IRegistry<ModelResourceLocation, IBakedModel>) registry.get(mm);
-        IBakedModel model = null;
-        for (ModelResourceLocation pair : mr.getKeys()) {
-            if (pair.getResourceDomain().equals("lt3dimporter") && pair.getResourcePath().equals("modelblock"));
-            model = mr.getObject(pair);
-        }
-        postMessage("models:" + model.toString());
-        } catch (Exception e) {
-            
-        }*/
-    }
-
-    private void postMessage(String msg) {
-        this.player.sendMessage(new TextComponentString(msg));
+        PacketHandler.sendPacketToServer(nbtPacket); // TODO: filter out large packets before they brick a player or a chunk
     }
 
     /**
@@ -151,7 +125,7 @@ public class Converter implements Runnable {
             objInputStream.close();
         } catch (IOException | NullPointerException e) {
             LT3DImporter.logger.error("Error closing the objInputStream! If you are getting this error too often, please, open an issue on GitHub (link on CurseForge). Include this info:" + System.lineSeparator() + ExceptionUtils.getStackTrace(e));
-            postMessage(TextFormatting.RED + "Error closing the objInputStream! Check log!");
+            postMessage(this.player, TextFormatting.RED + "Error closing the objInputStream! Check log!");
         }
         
         obj = ObjUtils.triangulate(obj, new LightObj(true));
@@ -169,6 +143,7 @@ public class Converter implements Runnable {
                     try {
                         stream = new FileInputStream(rootDir + fileName);
                     } catch (FileNotFoundException e) {
+                        LT3DImporter.logger.error("Error loading texture, file '" + rootDir + fileName + "' doesn't exist! Full stacktrace below:");
                         LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
                         throw new ImportException("One or more MTL files declared in the obj file do not exist!");
                     }
@@ -186,7 +161,7 @@ public class Converter implements Runnable {
                         stream.close();
                     } catch (IOException | NullPointerException e) {
                         LT3DImporter.logger.error("Error closing the stream! If you are getting this error too often, please, open an issue on GitHub (link on CurseForge). Include this info:" + System.lineSeparator() + ExceptionUtils.getStackTrace(e));
-                        postMessage(TextFormatting.RED + "Error closing the stream! Check log!");
+                        postMessage(this.player, TextFormatting.RED + "Error closing the stream! Check log!");
                     }
                     
                     mtls.addAll(mtls0);
@@ -200,7 +175,7 @@ public class Converter implements Runnable {
                 
                 for (Mtl mtl : mtls) {
                     if (mtlMap.containsKey(mtl.getName())) {
-                        throw new ImportException("Duplicate material found in declared MTL files!");
+                        throw new ImportException("Duplicate material found in declared MTL files! (" + mtl.getName() + ")");
                     }
                     
                     mtlMap.put(mtl.getName(), mtl);
@@ -212,6 +187,7 @@ public class Converter implements Runnable {
                     try {
                         texMap.put(material, new MtlTexture(mtlMap.get(material), rootDir));
                     } catch (IOException e) {
+                        LT3DImporter.logger.error("Error loading texture, file '" + mtlMap.get(material).getMapKd() + "' is in unsupported format! Full stacktrace below:");
                         LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
                         throw new ImportException("Error loading one or more texture files declared in the MTL file! Is it in supported format? (JPEG, PNG, BMP)");
                     }
@@ -224,6 +200,7 @@ public class Converter implements Runnable {
                         texMap.put(((LightObjGroup) obj.getMaterialGroup(i)).getName(), tex); // all materials have the same texture
                     }
                 } catch (IOException e) {
+                    LT3DImporter.logger.error("Error loading texture, file '" + this.tex + "' is in unsupported format! Full stacktrace below:");
                     LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
                     throw new ImportException("Error loading texture file! Is it in supported format? (JPEG, PNG, BMP)");
                 }

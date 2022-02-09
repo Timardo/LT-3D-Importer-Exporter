@@ -15,13 +15,13 @@ public class NormalTexture implements Texture {
 
     @Override
     public int colorTile(double[] uv) {
-        if (uv == null) return -1; // can happen in cases when some faces don't have normals
+        if (uv == null) return -1; // can happen in cases when some faces don't have texture coords
         
-        double nU = uv[0] % 1.0F;
-        double nV = uv[1] % 1.0F;
+        double nU = uv[0] % 1.0D;
+        double nV = uv[1] % 1.0D;
         
-        if (nU < 0.0F) nU += 1.0F;
-        if (nV < 0.0F) nV += 1.0F;
+        if (nU < 0.0F) nU += 1.0D;
+        if (nV < 0.0F) nV += 1.0D;
         
         int x = (int)(nU * (this.texture.getWidth() - 1));
         int y = (int)((1.0D - nV) * (this.texture.getHeight() - 1));
