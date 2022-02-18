@@ -260,18 +260,21 @@ public class Exporter implements Runnable {
         String iconName = sprite.getIconName();
         String matName = iconName.substring(0, iconName.indexOf(':')) + "_" + iconName.substring(iconName.lastIndexOf('/') + 1); //base material name
         int color = cube.color;
+        boolean buildTexture = false;
         
         if (textures.containsKey(iconName)) { // texture is already defined, check color
             if (!textures.get(iconName).containsKey(color)) { // color is new, create it
                 textures.get(iconName).put(color, textures.get(iconName).size());
-                buildNewTexture(sprite, color, matName, mtls);
+                buildTexture = true;
             }
         } else {
             textures.put(iconName, new HashMap<Integer, Integer>() {{put(color, 0);}});
-            buildNewTexture(sprite, color, matName, mtls);
+            buildTexture = true;
         }
         
         matName = matName + textures.get(iconName).get(color).toString(); // append index of this color as material name
+        
+        if (buildTexture) buildNewTexture(sprite, color, matName, mtls); // must call the method AFTER appending material color index
         
         return matName;
     }
@@ -281,12 +284,13 @@ public class Exporter implements Runnable {
         int[] rawFinalTextureData = new int[textureData[0].length];
         
         for (int k = 0; k < textureData[0].length; k++) { // only getting the first texture data TODO check what the index actually means (constructing more textures into one?)
-            rawFinalTextureData[k] = color == -1 ? textureData[0][k] : ColorUtils.blend(textureData[0][k], color); // blend the color if it's not white TODO fix color blending
+            //rawFinalTextureData[k] = color == -1 ? textureData[0][k] : ColorUtils.blend(textureData[0][k], color); // blend the color if it's not white TODO fix color blending
+            rawFinalTextureData[k] = multiplyColor(textureData[0][k], color);
         }
         
         BufferedImage image = new BufferedImage(sprite.getIconWidth(), sprite.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
         image.setRGB(0, 0, sprite.getIconWidth(), sprite.getIconHeight(), rawFinalTextureData, 0, sprite.getIconWidth());
-        String texturePath = matName.replace('_', '/') + ".png";
+        String texturePath = "textures/" + matName.substring(0, matName.indexOf('_')) + "/" + matName.substring(matName.indexOf('_') + 1) + ".png";
         File textureFile = new File(texturePath);
         textureFile.mkdirs();
 
@@ -300,10 +304,10 @@ public class Exporter implements Runnable {
         //currentMaterial.setNs(100.0F); // set by default
         currentMaterial.setKa(1.0F, 1.0F, 1.0F); // ambient color
         currentMaterial.setKd(1.0F, 1.0F, 1.0F); // actual color - not used, messes up rendering, which uses different blend technique than LT
-        currentMaterial.setKs(0.5F, 0.5F, 0.5F); // specular reflection
+        // currentMaterial.setKs(0.0F, 0.0F, 0.0F); // specular reflection - defaults to zero
         // currentMaterial.setKe(0.0F, 0.0F, 0.0F); not supported by Obj lib defines emissive color parameter
         // currentMaterial.setNi(1.0F); not supported by Obj lib defines optical density parameter
-        currentMaterial.setD(1.0F); // some kind of transparency, idk what it does, transparent textures are pain and very rendering-engine dependant
+        currentMaterial.setD(1.0F); // transparency of the whole material
         currentMaterial.setMapKd(texturePath);
         mtls.add(currentMaterial);
     }
