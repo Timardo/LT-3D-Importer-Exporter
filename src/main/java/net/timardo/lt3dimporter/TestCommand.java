@@ -40,7 +40,8 @@ public class TestCommand extends CommandBase {
         // TODO: find out why this new thread blocks the chat thread
         postMessage(sender, "Exporting");
         Exporter exporter = new Exporter(server, sender);
-        exporter.run();
+        Thread thread = new Thread(exporter);
+        thread.run();
         postMessage(sender, "Exported");
     }
 

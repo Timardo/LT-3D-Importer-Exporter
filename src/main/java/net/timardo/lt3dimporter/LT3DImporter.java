@@ -34,7 +34,7 @@ import com.creativemd.littletiles.common.structure.type.premade.LittleStructureP
 public class LT3DImporter {
     public static final String MOD_ID = "lt3dimporter";
     public static final String NAME = "Little Tiles 3D Importer";
-    public static final String VERSION = "0.6.2";
+    public static final String VERSION = "0.7";
     public static Logger logger;
 
     @EventHandler

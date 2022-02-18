@@ -129,6 +129,7 @@ public class ModelImporterGui extends SubGui {
         
         this.maxSize = new GuiTextfield("maxsize", this.parentStructure.maxSize, 144, 55, 65, 14);
         this.maxSize.setCustomTooltip("Max size");
+        this.maxSize.setNumbersOnly();
         addControl(this.maxSize);
         
         addControl(new GuiButton("convertbutton", "Import!", 144, 80, 42, 14) {
@@ -156,7 +157,7 @@ public class ModelImporterGui extends SubGui {
         });
         
         if (this.parentStructure.useTex) {
-            this.useTex.mousePressed(0, 0, -21);
+            this.useTex.mousePressed(0, 0, -21); // -21 indicates internal call which shouldn't make sound
         } else {
             this.useColor.mousePressed(0, 0, -21);
         }

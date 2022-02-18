@@ -48,7 +48,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import static net.timardo.lt3dimporter.Utils.*;
 
-public class Exporter extends Thread {
+public class Exporter implements Runnable {
     
     private ICommandSender sender;
 
@@ -97,17 +97,19 @@ public class Exporter extends Thread {
         Map<Long, Integer> textureCoords = new HashMap<Long, Integer>(); // all texture coordinates with their indices stored as Long from two float values
         Map<Integer, Integer> normalMap = new HashMap<Integer, Integer>(); // all normals
         Map<String, Map<Integer, Integer>> textures = new HashMap<String, Map<Integer, Integer>>(); // all textures in format texturename->map of different colors mapped to their indices
-        Map<Long, Map<Long, int[]>> uniqueFaces = new HashMap<Long, Map<Long, int[]>>(); // unique faces - if there is a duplicate face, void them (most probably none of them will be rendered anyways)
+        //Map<Long, Map<Long, Tuple<int[], String>>> uniqueFaces = new HashMap<Long, Map<Long, Tuple<int[], String>>>(); // unique faces - will use later probably
+        Map<String, Map<Long, Map<Long, List<int[]>>>> materialGroups = new HashMap<String, Map<Long, Map<Long, List<int[]>>>>(); // map materials
         
         for (int i = 0; i < cubes.size(); i++) {
             RenderBox cube = cubes.get(i);
+            System.out.println(cube.block.getClass());
             IBakedModel blockModel = Minecraft.getMinecraft().getBlockRendererDispatcher().getModelForState(cube.getBlockState());
-            List<BakedQuad> quads = new ArrayList<BakedQuad>(); // all quads making up this tile, should be min. 4 and max. 6
+            List<BakedQuad> quads = new ArrayList<BakedQuad>(); // all quads making up this tile, should be min. 4 and max. 6, more than 6 happens when there are more textures rendered on same face
             Arrays.asList(EnumFacing.values()).forEach(facing -> quads.addAll(CreativeBakedModel.getBakedQuad(null, cube, null, cube.getOffset(), cube.getBlockState(), blockModel, null, facing, 0, true)));
             
-            for (BakedQuad quad : quads) { // TODO: check grass
+            for (BakedQuad quad : quads) { // TODO: add support for biome-dependent textures
                 // build data structure
-                int[] vertexData = quad.getVertexData(); // data containing position, normals, UV and color (???)
+                int[] vertexData = quad.getVertexData(); // data containing position, normals, UV and color - no purpose found yet
                 VertexFormat format = quad.getFormat(); // get format of data, AFAIK should be DefaultVertexFormats.ITEM TODO check if this is always the case
                 int index = 0;
                 int uvOffset = format.getUvOffsetById(0) / 4; // divided by 4 because offset is in bytes and each integer in int[] has 4 bytes
@@ -129,7 +131,7 @@ public class Exporter extends Thread {
                     if (!uniqueVertices.add(pos)) {
                         duplicateOffset--;
                         
-                        if (duplicateOffset < -1) break; // skip face to ifnore 2-point faces
+                        if (duplicateOffset < -1) break; // skip face to ignore 2-point faces
                         
                         vertexIndices = Arrays.copyOf(vertexIndices, 4 + duplicateOffset);
                         texCoordIndices = Arrays.copyOf(texCoordIndices, 4 + duplicateOffset);
@@ -146,60 +148,6 @@ public class Exporter extends Thread {
                     byte normalJ = (byte)((normals >> 8) & 255);
                     byte normalK = (byte)((normals >> 16) & 255);
                     
-                    // TEXTURE START
-                    TextureAtlasSprite sprite = quad.getSprite();
-                    String iconName = sprite.getIconName();
-                    String matName = iconName.substring(0, iconName.indexOf(':')) + "_" + iconName.substring(iconName.lastIndexOf('/') + 1); //base material name
-                    int color = cube.color;
-                    boolean buildTexture = false; // TODO maybe put this in a separate method?
-                    
-                    if (textures.containsKey(iconName)) { // texture is already defined, check color
-                        if (!textures.get(iconName).containsKey(color)) { // color is new, create it
-                            textures.get(iconName).put(color, textures.get(iconName).size());
-                            buildTexture = true;
-                        }
-                    } else {
-                        textures.put(iconName, new HashMap<Integer, Integer>() {{put(color, 0);}});
-                        buildTexture = true;
-                    }
-                    
-                    matName = matName + textures.get(iconName).get(color).toString(); // append index of this color as material name
-                    
-                    if (buildTexture) { // build texture and save it as a file
-                        int[][] textureData = sprite.getFrameTextureData(0); // only get the first frame TODO support for animated textures? (would require a blender script for blender probably)
-                        int[] rawFinalTextureData = new int[textureData[0].length];
-                        
-                        for (int k = 0; k < textureData[0].length; k++) { // only getting the first texture data TODO check what the index actually means (constructing more textures into one?)
-                            rawFinalTextureData[k] = ColorUtils.blend(textureData[0][k], color); // blend the color
-                        }
-                        
-                        BufferedImage image = new BufferedImage(sprite.getIconWidth(), sprite.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
-                        image.setRGB(0, 0, sprite.getIconWidth(), sprite.getIconHeight(), rawFinalTextureData, 0, sprite.getIconWidth());
-                        String texturePath = matName.replace('_', '/') + ".png";
-                        File textureFile = new File(texturePath);
-                        textureFile.mkdirs();
-
-                        try {
-                            ImageIO.write(image, "png", textureFile);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        
-                        Mtl currentMaterial = Mtls.create(matName); // TODO: add support for more material attributes
-                        //currentMaterial.setNs(100.0F); // set by default
-                        currentMaterial.setKa(1.0F, 1.0F, 1.0F); // ambient color
-                        currentMaterial.setKd(1.0F, 1.0F, 1.0F); // actual color - not used, messes up rendering, which uses different blend technique than LT
-                        currentMaterial.setKs(0.5F, 0.5F, 0.5F); // specular reflection
-                        // currentMaterial.setKe(0.0F, 0.0F, 0.0F); not supported by Obj lib defines emissive color parameter
-                        // currentMaterial.setNi(1.0F); not supported by Obj lib defines optical density parameter
-                        currentMaterial.setD(1.0F); // some kind of transparency, idk what it does, transparent textures are pain and very rendering-engine dependant
-                        currentMaterial.setMapKd(texturePath);
-                        mtls.add(currentMaterial);
-                    }
-                    
-                    obj.setActiveMaterialGroupName(matName);
-                    // TEXTURE END
-                    
                     if (!vertices.containsKey(pos)) {
                         vertices.put(pos, vertices.size());
                         obj.addVertex(x, y, z);
@@ -212,7 +160,7 @@ public class Exporter extends Thread {
                     
                     if (!normalMap.containsKey(normals)) {
                         normalMap.put(normals, normalMap.size());
-                        obj.addNormal(normalI / 255.0F, normalJ / 255.0F, normalK / 255.0F);
+                        obj.addNormal(((int) normalI + 128) / 255.0F, ((int) normalJ + 128) / 255.0F, ((int) normalK + 128) / 255.0F);
                     }
                     
                     vertexIndices[j + duplicateOffset] = vertices.get(pos);
@@ -220,42 +168,143 @@ public class Exporter extends Thread {
                     normalIndices[j + duplicateOffset] = normalMap.get(normals);
                 }
                 
+                
+                String matName = processTextures(quad, cube, textures, mtls);
+                
                 if (duplicateOffset >= -1) { // only add face if it's a quad or a triangle
                     Long firstTwo = (((long)vertexIndices[0]) << 32) | (vertexIndices[1] & 0xffffffffL);
                     Long lastTwo = (((long)vertexIndices[2]) << 32) | ((vertexIndices.length == 3 ? -1 : vertexIndices[3]) & 0xffffffffL);
                     
+                    if (!materialGroups.containsKey(matName)) {
+                        materialGroups.put(matName, new HashMap<Long, Map<Long, List<int[]>>>());
+                    }
+                    
+                    if (!materialGroups.get(matName).containsKey(firstTwo)) {
+                        materialGroups.get(matName).put(firstTwo, new HashMap<Long, List<int[]>>());
+                    }
+                    
+                    if (!materialGroups.get(matName).get(firstTwo).containsKey(lastTwo)) {
+                        materialGroups.get(matName).get(firstTwo).put(lastTwo, new ArrayList<int[]>());
+                    }
+                    
+                    int[] faceData = ArrayUtils.addAll(texCoordIndices, normalIndices);
+                    materialGroups.get(matName).get(firstTwo).get(lastTwo).add(faceData); // add entry
+                    /* 
                     if (!uniqueFaces.containsKey(firstTwo)) {
-                        uniqueFaces.put(firstTwo, new HashMap<Long, int[]>());
+                        uniqueFaces.put(firstTwo, new HashMap<Long, Tuple<int[], String>>());
                     }
                     
                     if (!uniqueFaces.get(firstTwo).containsKey(lastTwo)) {
-                        int[] otherData = ArrayUtils.addAll(texCoordIndices, normalIndices);
+                        Tuple<int[], String> otherData = new Tuple<int[], String>(ArrayUtils.addAll(texCoordIndices, normalIndices), matName);
                         uniqueFaces.get(firstTwo).put(lastTwo, otherData); // add data for face
+                        lastI = i; // prevent voiding faces with multiple quads
                     } else if (uniqueFaces.get(firstTwo).get(lastTwo) != null) {
-                        uniqueFaces.get(firstTwo).put(lastTwo, null); // set face data to null to ignore them later
+                        if (lastI != i) {
+                            uniqueFaces.get(firstTwo).put(lastTwo, null); // set face data to null to ignore them later
+                        } else {
+                            // TODO: merge textures? add two faces on same location?
+                        }
+                    }*/
+                }
+            }
+        }
+        
+        for (Entry<String, Map<Long, Map<Long, List<int[]>>>> material : materialGroups.entrySet()) {
+            obj.setActiveMaterialGroupName(material.getKey());
+            
+            for (Entry<Long, Map<Long, List<int[]>>> firstMap : material.getValue().entrySet()) {
+                long firstTwo = firstMap.getKey();
+
+                for (Entry<Long, List<int[]>> secondMap : firstMap.getValue().entrySet()) {
+                    long secondTwo = secondMap.getKey();
+                    
+                    for (int[] otherData : secondMap.getValue()) { //  this list contains only duplicate faces found in one cube TODO: handle duplicates of different and same textures (NOT MATERIALS!)
+                        int[] vertexIndices = new int[] { (int)(firstTwo >> 32), (int)(firstTwo), (int)(secondTwo >> 32), (int)(secondTwo) };
+                        
+                        if (vertexIndices[3] == -1) vertexIndices = Arrays.copyOf(vertexIndices, 3); // this is a triangle
+                        
+                        int[] texCoordIndices = Arrays.copyOf(otherData, vertexIndices.length);
+                        int[] normalIndices = new int[vertexIndices.length];
+                        System.arraycopy(otherData, vertexIndices.length, normalIndices, 0, vertexIndices.length);
+                        ObjFace objFace = new LightObjFace(vertexIndices, texCoordIndices, normalIndices); // TODO: check normals
+                        obj.addFace(objFace);
                     }
                 }
             }
         }
         
-        for (Entry<Long, Map<Long, int[]>> firstMap : uniqueFaces.entrySet()) {
+        /*for (Entry<Long, Map<Long, Tuple<int[], String>>> firstMap : uniqueFaces.entrySet()) {
             long firstTwo = firstMap.getKey();
 
-            for (Entry<Long, int[]> secondMap : firstMap.getValue().entrySet()) {
+            for (Entry<Long, Tuple<int[], String>> secondMap : firstMap.getValue().entrySet()) {
                 if (secondMap.getValue() == null) continue; // ignore empty entries
                 
                 long secondTwo = secondMap.getKey();
-                int[] otherData = secondMap.getValue();
+                Tuple<int[], String> otherData = secondMap.getValue();
                 int[] vertexIndices = new int[] { (int)(firstTwo >> 32), (int)(firstTwo), (int)(secondTwo >> 32), (int)(secondTwo) };
                 
                 if (vertexIndices[3] == -1) vertexIndices = Arrays.copyOf(vertexIndices, 3); // this is a triangle
                 
-                int[] texCoordIndices = Arrays.copyOf(otherData, vertexIndices.length);
+                int[] texCoordIndices = Arrays.copyOf(otherData.getFirst(), vertexIndices.length);
                 int[] normalIndices = new int[vertexIndices.length];
-                System.arraycopy(otherData, vertexIndices.length, normalIndices, 0, vertexIndices.length);
+                System.arraycopy(otherData.getFirst(), vertexIndices.length, normalIndices, 0, vertexIndices.length);
                 ObjFace objFace = new LightObjFace(vertexIndices, texCoordIndices, normalIndices); // TODO: check normals
+                obj.setActiveMaterialGroupName(otherData.getSecond());
                 obj.addFace(objFace);
             }
+        }*/
+    }
+
+    private String processTextures(BakedQuad quad, RenderBox cube, Map<String, Map<Integer, Integer>> textures, List<Mtl> mtls) {
+        TextureAtlasSprite sprite = quad.getSprite();
+        String iconName = sprite.getIconName();
+        String matName = iconName.substring(0, iconName.indexOf(':')) + "_" + iconName.substring(iconName.lastIndexOf('/') + 1); //base material name
+        int color = cube.color;
+        
+        if (textures.containsKey(iconName)) { // texture is already defined, check color
+            if (!textures.get(iconName).containsKey(color)) { // color is new, create it
+                textures.get(iconName).put(color, textures.get(iconName).size());
+                buildNewTexture(sprite, color, matName, mtls);
+            }
+        } else {
+            textures.put(iconName, new HashMap<Integer, Integer>() {{put(color, 0);}});
+            buildNewTexture(sprite, color, matName, mtls);
         }
+        
+        matName = matName + textures.get(iconName).get(color).toString(); // append index of this color as material name
+        
+        return matName;
+    }
+    
+    private void buildNewTexture(TextureAtlasSprite sprite, int color, String matName, List<Mtl> mtls) {
+        int[][] textureData = sprite.getFrameTextureData(0); // only get the first frame TODO support for animated textures? (would require a blender script for blender probably)
+        int[] rawFinalTextureData = new int[textureData[0].length];
+        
+        for (int k = 0; k < textureData[0].length; k++) { // only getting the first texture data TODO check what the index actually means (constructing more textures into one?)
+            rawFinalTextureData[k] = color == -1 ? textureData[0][k] : ColorUtils.blend(textureData[0][k], color); // blend the color if it's not white TODO fix color blending
+        }
+        
+        BufferedImage image = new BufferedImage(sprite.getIconWidth(), sprite.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        image.setRGB(0, 0, sprite.getIconWidth(), sprite.getIconHeight(), rawFinalTextureData, 0, sprite.getIconWidth());
+        String texturePath = matName.replace('_', '/') + ".png";
+        File textureFile = new File(texturePath);
+        textureFile.mkdirs();
+
+        try {
+            ImageIO.write(image, "png", textureFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        Mtl currentMaterial = Mtls.create(matName); // TODO: add support for more material attributes
+        //currentMaterial.setNs(100.0F); // set by default
+        currentMaterial.setKa(1.0F, 1.0F, 1.0F); // ambient color
+        currentMaterial.setKd(1.0F, 1.0F, 1.0F); // actual color - not used, messes up rendering, which uses different blend technique than LT
+        currentMaterial.setKs(0.5F, 0.5F, 0.5F); // specular reflection
+        // currentMaterial.setKe(0.0F, 0.0F, 0.0F); not supported by Obj lib defines emissive color parameter
+        // currentMaterial.setNi(1.0F); not supported by Obj lib defines optical density parameter
+        currentMaterial.setD(1.0F); // some kind of transparency, idk what it does, transparent textures are pain and very rendering-engine dependant
+        currentMaterial.setMapKd(texturePath);
+        mtls.add(currentMaterial);
     }
 }
