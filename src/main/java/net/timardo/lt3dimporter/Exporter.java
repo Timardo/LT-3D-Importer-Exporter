@@ -2,10 +2,8 @@ package net.timardo.lt3dimporter;
 
 import com.creativemd.creativecore.client.rendering.RenderBox;
 import com.creativemd.creativecore.client.rendering.model.CreativeBakedModel;
-import com.creativemd.creativecore.common.utils.mc.ColorUtils;
 import com.creativemd.littletiles.common.item.ItemLittleRecipeAdvanced;
 import com.creativemd.littletiles.common.tile.preview.LittlePreview;
-import com.creativemd.littletiles.common.util.grid.LittleGridContext;
 
 import de.javagl.obj.Mtl;
 import de.javagl.obj.MtlWriter;
@@ -24,7 +22,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import net.timardo.lt3dimporter.obj3d.LightObjFace;
 
@@ -43,8 +40,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.imageio.ImageIO;
-
-import org.apache.commons.lang3.ArrayUtils;
 
 import static net.timardo.lt3dimporter.Utils.*;
 
@@ -91,21 +86,23 @@ public class Exporter implements Runnable {
      * @param mtls - materials for the obj
      */
     public void exportModel(ItemStack stack, Obj obj, List<Mtl> mtls) {
-        int grid = LittleGridContext.get(stack.getTagCompound()).size;
+        int verticesCount = 0;
         List<? extends RenderBox> cubes = LittlePreview.getCubes(stack, false);
-        Map<Long, Integer> vertices = new HashMap<Long, Integer>(); // all vertices with their indices stored as Long from BlockPos TODO check RAM usage/possibility of buffering/file cache
+        Map<Integer, Map<Long, Integer>> vertices = new HashMap<Integer, Map<Long, Integer>>(); // all vertices with their indices stored as Long from BlockPos TODO check RAM usage/possibility of buffering/file cache
         Map<Long, Integer> textureCoords = new HashMap<Long, Integer>(); // all texture coordinates with their indices stored as Long from two float values
-        Map<Integer, Integer> normalMap = new HashMap<Integer, Integer>(); // all normals
+        //Map<Integer, Integer> normalMap = new HashMap<Integer, Integer>(); // all normals
         Map<String, Map<Integer, Integer>> textures = new HashMap<String, Map<Integer, Integer>>(); // all textures in format texturename->map of different colors mapped to their indices
         //Map<Long, Map<Long, Tuple<int[], String>>> uniqueFaces = new HashMap<Long, Map<Long, Tuple<int[], String>>>(); // unique faces - will use later probably
         Map<String, Map<Long, Map<Long, List<int[]>>>> materialGroups = new HashMap<String, Map<Long, Map<Long, List<int[]>>>>(); // map materials
         
         for (int i = 0; i < cubes.size(); i++) {
             RenderBox cube = cubes.get(i);
-            System.out.println(cube.block.getClass());
             IBakedModel blockModel = Minecraft.getMinecraft().getBlockRendererDispatcher().getModelForState(cube.getBlockState());
-            List<BakedQuad> quads = new ArrayList<BakedQuad>(); // all quads making up this tile, should be min. 4 and max. 6, more than 6 happens when there are more textures rendered on same face
-            Arrays.asList(EnumFacing.values()).forEach(facing -> quads.addAll(CreativeBakedModel.getBakedQuad(null, cube, null, cube.getOffset(), cube.getBlockState(), blockModel, null, facing, 0, true)));
+            // System.out.println(blockModel.getClass());
+            List<BakedQuad> quads = new ArrayList<BakedQuad>(); // all quads making up this tile
+            Arrays.asList(EnumFacing.values()).forEach(facing -> quads.addAll(CreativeBakedModel.getBakedQuad(null, cube, null, cube.getOffset(), cube.getBlockState(), blockModel, null, facing, 0, false)));
+            
+            // TODO rework this part to implement support for merginf duplicate faces with compound textures because Blender deletes them..
             
             for (BakedQuad quad : quads) { // TODO: add support for biome-dependent textures
                 // build data structure
@@ -113,43 +110,56 @@ public class Exporter implements Runnable {
                 VertexFormat format = quad.getFormat(); // get format of data, AFAIK should be DefaultVertexFormats.ITEM TODO check if this is always the case
                 int index = 0;
                 int uvOffset = format.getUvOffsetById(0) / 4; // divided by 4 because offset is in bytes and each integer in int[] has 4 bytes
-                int normalOffset = format.getNormalOffset() / 4;
-                Set<Long> uniqueVertices = new HashSet<Long>();
+                //int normalOffset = format.getNormalOffset() / 4;
+                Map<Integer, Set<Long>> uniqueVertices = new HashMap<Integer, Set<Long>>();
                 int[] vertexIndices = new int[4];
                 int[] texCoordIndices = new int[4];
-                int[] normalIndices = new int[4];
+                //int[] normalIndices = new int[4];
                 int duplicateOffset = 0;
                 
                 for (int j = 0; j < 4; j++) { // all quads have 4 vertices, even triangle "looking" ones
                     index = format.getIntegerSize() * j; // real index
-                    
                     float x = Float.intBitsToFloat(vertexData[index]);
                     float y = Float.intBitsToFloat(vertexData[index + 1]);
                     float z = Float.intBitsToFloat(vertexData[index + 2]);
-                    Long pos = new BlockPos(Math.round(x * grid), Math.round(y * grid), Math.round(z * grid)).toLong(); // store position as long for better performance
+                    
+                    int xI = Float.floatToRawIntBits(x);
+                    long yzL = (((long)Float.floatToRawIntBits(y)) << 32) | (Float.floatToRawIntBits(z) & 0xffffffffL);
+                    
                     // skip duplicate vertices and data in case of triangles
-                    if (!uniqueVertices.add(pos)) {
-                        duplicateOffset--;
-                        
-                        if (duplicateOffset < -1) break; // skip face to ignore 2-point faces
-                        
-                        vertexIndices = Arrays.copyOf(vertexIndices, 4 + duplicateOffset);
-                        texCoordIndices = Arrays.copyOf(texCoordIndices, 4 + duplicateOffset);
-                        normalIndices = Arrays.copyOf(normalIndices, 4 + duplicateOffset);
-                        continue;
+                    if (uniqueVertices.containsKey(xI)) {
+                        if (uniqueVertices.get(xI).contains(yzL)) {
+                            duplicateOffset--;
+                            
+                            if (duplicateOffset < -1) break; // skip face to ignore 2-point faces
+                            
+                            vertexIndices = Arrays.copyOf(vertexIndices, 4 + duplicateOffset);
+                            texCoordIndices = Arrays.copyOf(texCoordIndices, 4 + duplicateOffset);
+                            //normalIndices = Arrays.copyOf(normalIndices, 4 + duplicateOffset);
+                            continue;
+                        } else {
+                            uniqueVertices.get(xI).add(yzL);
+                        }
+                    } else {
+                        uniqueVertices.put(xI, new HashSet<Long>() {{add(yzL);}});
                     }
                     
                     float u = quad.getSprite().getUnInterpolatedU(Float.intBitsToFloat(vertexData[index + uvOffset])) / 16.0F % 1; // get U and V from data
                     float v = quad.getSprite().getUnInterpolatedV(Float.intBitsToFloat(vertexData[index + uvOffset + 1])) / 16.0F % 1;
                     Long uv = (((long)Float.floatToRawIntBits(u)) << 32) | (Float.floatToRawIntBits(v) & 0xffffffffL); // store UV as long for better performance
-                    
+                    /* ignore normals for now TODO export normal maps
                     int normals = vertexData[index + normalOffset]; // data containing normals, first 3 bytes should be normal data
                     byte normalI = (byte)(normals & 255);
                     byte normalJ = (byte)((normals >> 8) & 255);
                     byte normalK = (byte)((normals >> 16) & 255);
+                    */
+                    if (!vertices.containsKey(xI)) {
+                        vertices.put(xI, new HashMap<Long, Integer>());
+                    }
                     
-                    if (!vertices.containsKey(pos)) {
-                        vertices.put(pos, vertices.size());
+                    if (!vertices.get(xI).containsKey(yzL)) {
+                        vertices.get(xI).put(yzL, verticesCount);
+                        verticesCount++;
                         obj.addVertex(x, y, z);
                     }
                     
@@ -157,15 +167,15 @@ public class Exporter implements Runnable {
                         textureCoords.put(uv, textureCoords.size());
                         obj.addTexCoord(u, 1.0F - v); // flip v to preserve texture rotation
                     }
-                    
+                    /*
                     if (!normalMap.containsKey(normals)) {
                         normalMap.put(normals, normalMap.size());
                         obj.addNormal(((int) normalI + 128) / 255.0F, ((int) normalJ + 128) / 255.0F, ((int) normalK + 128) / 255.0F);
                     }
-                    
-                    vertexIndices[j + duplicateOffset] = vertices.get(pos);
+                    */
+                    vertexIndices[j + duplicateOffset] = vertices.get(xI).get(yzL);
                     texCoordIndices[j + duplicateOffset] = textureCoords.get(uv);
-                    normalIndices[j + duplicateOffset] = normalMap.get(normals);
+                    // normalIndices[j + duplicateOffset] = normalMap.get(normals);
                 }
                 
                 
@@ -187,7 +197,7 @@ public class Exporter implements Runnable {
                         materialGroups.get(matName).get(firstTwo).put(lastTwo, new ArrayList<int[]>());
                     }
                     
-                    int[] faceData = ArrayUtils.addAll(texCoordIndices, normalIndices);
+                    int[] faceData = /*ArrayUtils.addAll(*/texCoordIndices/*, normalIndices)*/;
                     materialGroups.get(matName).get(firstTwo).get(lastTwo).add(faceData); // add entry
                     /* 
                     if (!uniqueFaces.containsKey(firstTwo)) {
@@ -223,10 +233,10 @@ public class Exporter implements Runnable {
                         
                         if (vertexIndices[3] == -1) vertexIndices = Arrays.copyOf(vertexIndices, 3); // this is a triangle
                         
-                        int[] texCoordIndices = Arrays.copyOf(otherData, vertexIndices.length);
-                        int[] normalIndices = new int[vertexIndices.length];
-                        System.arraycopy(otherData, vertexIndices.length, normalIndices, 0, vertexIndices.length);
-                        ObjFace objFace = new LightObjFace(vertexIndices, texCoordIndices, normalIndices); // TODO: check normals
+                        int[] texCoordIndices = /*Arrays.copyOf(*/otherData/*, vertexIndices.length)*/;
+                        //int[] normalIndices = new int[vertexIndices.length];
+                        //System.arraycopy(otherData, vertexIndices.length, normalIndices, 0, vertexIndices.length);
+                        ObjFace objFace = new LightObjFace(vertexIndices, texCoordIndices, /*normalIndices*/null); // TODO: check normals
                         obj.addFace(objFace);
                     }
                 }
@@ -259,33 +269,33 @@ public class Exporter implements Runnable {
         TextureAtlasSprite sprite = quad.getSprite();
         String iconName = sprite.getIconName();
         String matName = iconName.substring(0, iconName.indexOf(':')) + "_" + iconName.substring(iconName.lastIndexOf('/') + 1); //base material name
-        int color = cube.color;
+        int baseBlockColor = Minecraft.getMinecraft().getBlockColors().colorMultiplier(cube.getBlockState(), null, null, quad.getTintIndex()) | 0xff000000; // set alpha to 255 regardless of given color
+        int finalColor = multiplyColor(baseBlockColor, cube.color);
         boolean buildTexture = false;
         
         if (textures.containsKey(iconName)) { // texture is already defined, check color
-            if (!textures.get(iconName).containsKey(color)) { // color is new, create it
-                textures.get(iconName).put(color, textures.get(iconName).size());
+            if (!textures.get(iconName).containsKey(finalColor)) { // color is new, create it
+                textures.get(iconName).put(finalColor, textures.get(iconName).size());
                 buildTexture = true;
             }
         } else {
-            textures.put(iconName, new HashMap<Integer, Integer>() {{put(color, 0);}});
+            textures.put(iconName, new HashMap<Integer, Integer>() {{put(finalColor, 0);}});
             buildTexture = true;
         }
         
-        matName = matName + textures.get(iconName).get(color).toString(); // append index of this color as material name
+        matName = matName + textures.get(iconName).get(finalColor).toString(); // append index of this color as material name
         
-        if (buildTexture) buildNewTexture(sprite, color, matName, mtls); // must call the method AFTER appending material color index
+        if (buildTexture) buildNewTexture(sprite, finalColor, matName, mtls, quad.hasTintIndex()); // must call the method AFTER appending material color index
         
         return matName;
     }
     
-    private void buildNewTexture(TextureAtlasSprite sprite, int color, String matName, List<Mtl> mtls) {
-        int[][] textureData = sprite.getFrameTextureData(0); // only get the first frame TODO support for animated textures? (would require a blender script for blender probably)
+    private void buildNewTexture(TextureAtlasSprite sprite, int color, String matName, List<Mtl> mtls, boolean hasTintIndex) {
+        int[][] textureData = sprite.getFrameTextureData(0); // only get the first frame TODO support for animated textures? (would require a script for blender probably)
         int[] rawFinalTextureData = new int[textureData[0].length];
         
-        for (int k = 0; k < textureData[0].length; k++) { // only getting the first texture data TODO check what the index actually means (constructing more textures into one?)
-            //rawFinalTextureData[k] = color == -1 ? textureData[0][k] : ColorUtils.blend(textureData[0][k], color); // blend the color if it's not white TODO fix color blending
-            rawFinalTextureData[k] = multiplyColor(textureData[0][k], color);
+        for (int k = 0; k < textureData[0].length; k++) { // only getting the first texture data TODO check what the index actually means (constructing more textures into one? normal map? roughness map?)
+            rawFinalTextureData[k] = /*hasTintIndex ? */multiplyColor(textureData[0][k], color)/* : textureData[0][k]*/; // multiply color, currently recolors all textures, even those which should not be will be fixed with rework at line 110
         }
         
         BufferedImage image = new BufferedImage(sprite.getIconWidth(), sprite.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
