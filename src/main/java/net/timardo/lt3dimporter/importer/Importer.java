@@ -1,4 +1,4 @@
-package net.timardo.lt3dimporter.converter;
+package net.timardo.lt3dimporter.importer;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +39,8 @@ import net.timardo.lt3dimporter.obj3d.LightObjGroup;
 
 import static net.timardo.lt3dimporter.Utils.*;
 
-public class Converter implements Runnable {
+public class Importer implements Runnable {
+    
     private String model;
     private String tex;
     private Color col;
@@ -52,7 +53,7 @@ public class Converter implements Runnable {
     private EntityPlayer player;
     private ModelImporter structure;
     
-    public Converter(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture, boolean useMtl, EntityPlayer player, ModelImporter s) {
+    public Importer(String modelFile, String texName, Color color, int maxSize, int grid, float minprecision, ItemStack baseBlock, boolean texture, boolean useMtl, EntityPlayer player, ModelImporter s) {
         this.model = modelFile;
         this.tex = texName;
         this.col = color;
@@ -96,7 +97,7 @@ public class Converter implements Runnable {
     }
 
     /**
-     * Basic algorithm to load, convert, parse and return an NBT containg the structure from an .obj model
+     * Basic algorithm to load, convert, parse and return an NBT containing the structure from an .obj model
      * 
      * @return an NBT tag for Blueprint
      */
@@ -106,6 +107,9 @@ public class Converter implements Runnable {
         
         if (this.model.startsWith("\"") || this.model.endsWith("\""))
             this.model = this.model.replace("\"", "");
+        
+        if (this.tex.startsWith("\"") || this.tex.endsWith("\""))
+            this.tex = this.tex.replace("\"", "");
         
         try {
             objInputStream = new FileInputStream(this.model);
@@ -129,7 +133,7 @@ public class Converter implements Runnable {
         }
         
         obj = ObjUtils.triangulate(obj, new LightObj(true));
-        Map<String, Texture> texMap = new HashMap<String, Texture>(); // mapping material to texture
+        Map<String, ITexture> texMap = new HashMap<String, ITexture>(); // mapping material to texture
         // texture part
         if (this.isTex) {
             if (this.useMtl) {
@@ -194,19 +198,19 @@ public class Converter implements Runnable {
                 }
             } else {
                 try {
-                    Texture tex = new NormalTexture(this.tex);
+                    ITexture tex = new NormalTexture(this.tex);
                 
                     for (int i = 0; i < obj.getNumMaterialGroups(); i++) {
                         texMap.put(((LightObjGroup) obj.getMaterialGroup(i)).getName(), tex); // all materials have the same texture
                     }
                 } catch (IOException e) {
-                    LT3DImporter.logger.error("Error loading texture, file '" + this.tex + "' is in unsupported format! Full stacktrace below:");
+                    LT3DImporter.logger.error("Error loading texture, file '" + this.tex + "' is in unsupported format! Full stacktrace below:"); // TODO add error message for missing/non-existent file
                     LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
                     throw new ImportException("Error loading texture file! Is it in supported format? (JPEG, PNG, BMP)");
                 }
             }
         } else {
-            Texture tex = new ColoredTexture(ColorUtils.RGBAToInt(this.col));
+            ITexture tex = new ColoredTexture(ColorUtils.RGBAToInt(this.col));
             
             for (int i = 0; i < obj.getNumMaterialGroups(); i++) { // one condition + several loops for better efficiency
                 texMap.put(((LightObjGroup) obj.getMaterialGroup(i)).getName(), tex); // all materials have the same color

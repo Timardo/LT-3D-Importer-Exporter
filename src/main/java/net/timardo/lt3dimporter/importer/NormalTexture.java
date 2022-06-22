@@ -1,4 +1,4 @@
-package net.timardo.lt3dimporter.converter;
+package net.timardo.lt3dimporter.importer;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -6,7 +6,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-public class NormalTexture implements Texture {
+public class NormalTexture implements ITexture {
     private BufferedImage texture;
     
     public NormalTexture(String texFile) throws IOException {

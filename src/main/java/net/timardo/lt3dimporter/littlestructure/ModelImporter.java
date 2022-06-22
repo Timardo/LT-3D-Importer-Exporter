@@ -23,6 +23,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class ModelImporter extends LittleStructurePremade {
+    
     public String model;
     public String gridSize = ItemMultiTiles.currentContext.size + "";
     public String precision = "0.05";

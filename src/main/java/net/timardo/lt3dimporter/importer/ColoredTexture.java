@@ -1,6 +1,6 @@
-package net.timardo.lt3dimporter.converter;
+package net.timardo.lt3dimporter.importer;
 
-public class ColoredTexture implements Texture {
+public class ColoredTexture implements ITexture {
     public int color;
     
     public ColoredTexture(int colorIn) {

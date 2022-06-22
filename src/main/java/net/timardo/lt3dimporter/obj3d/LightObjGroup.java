@@ -32,7 +32,7 @@ import java.util.List;
 
 import de.javagl.obj.ObjFace;
 import de.javagl.obj.ObjGroup;
-import net.timardo.lt3dimporter.converter.Triangle;
+import net.timardo.lt3dimporter.importer.Triangle;
 
 public class LightObjGroup implements ObjGroup {
     /**

@@ -1,4 +1,4 @@
-package net.timardo.lt3dimporter.converter;
+package net.timardo.lt3dimporter.importer;
 
 public class ImportException extends Exception {
     private static final long serialVersionUID = 3968305724821591444L;

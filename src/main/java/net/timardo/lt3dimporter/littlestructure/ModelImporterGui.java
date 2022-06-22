@@ -16,7 +16,7 @@ import com.creativemd.littletiles.common.tile.math.location.StructureLocation;
 import com.creativemd.littletiles.common.util.grid.LittleGridContext;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.nbt.NBTTagCompound;
-import net.timardo.lt3dimporter.converter.Converter;
+import net.timardo.lt3dimporter.importer.Importer;
 import net.timardo.lt3dimporter.network.PacketStructureNBT;
 
 public class ModelImporterGui extends SubGui {
@@ -136,7 +136,7 @@ public class ModelImporterGui extends SubGui {
             
             @Override
             public void onClicked(int var1, int var2, int var3) {
-                Converter converter = new Converter(
+                Importer converter = new Importer(
                     modelFile.text,
                     texFile.text,
                     colorPicker.color,

@@ -1,4 +1,4 @@
-package net.timardo.lt3dimporter.converter;
+package net.timardo.lt3dimporter.importer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,7 +24,7 @@ import net.timardo.lt3dimporter.obj3d.LightObj;
 public class ConvertedModel {
     public LinkedHashMap<Integer, List<LittlePreview>> colorMap;
     public Set<Long> blocks;
-    public Map<String, Texture> textureMap;
+    public Map<String, ITexture> textureMap;
     public LittleGridContext context;
     public LightObj obj;
     public double ratio;
@@ -33,7 +33,7 @@ public class ConvertedModel {
     public NBTTagList previews;
     public Set<BlockPos> posSet;
     
-    public ConvertedModel(Map<String, Texture> texMap, LittleGridContext context, LightObj obj, double ratio, ItemStack baseBlock) {
+    public ConvertedModel(Map<String, ITexture> texMap, LittleGridContext context, LightObj obj, double ratio, ItemStack baseBlock) {
         this.colorMap = new LinkedHashMap<Integer, List<LittlePreview>>();
         this.blocks = new LinkedHashSet<Long>();
         this.textureMap = texMap;

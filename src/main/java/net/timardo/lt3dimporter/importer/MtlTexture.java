@@ -1,4 +1,4 @@
-package net.timardo.lt3dimporter.converter;
+package net.timardo.lt3dimporter.importer;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -14,7 +14,7 @@ import de.javagl.obj.Mtl;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
-public class MtlTexture implements Texture {
+public class MtlTexture implements ITexture {
     private float opacity;
     private float[] diffuse;
     private int color;

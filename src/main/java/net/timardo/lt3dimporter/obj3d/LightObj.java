@@ -43,7 +43,7 @@ import de.javagl.obj.FloatTuple;
 import de.javagl.obj.Obj;
 import de.javagl.obj.ObjFace;
 import de.javagl.obj.ObjGroup;
-import net.timardo.lt3dimporter.converter.Triangle;
+import net.timardo.lt3dimporter.importer.Triangle;
 
 /**
  * Slightly different implementation of {@link DefaultObj} to fit my needs.

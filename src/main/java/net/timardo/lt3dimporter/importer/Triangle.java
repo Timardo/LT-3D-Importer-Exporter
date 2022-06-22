@@ -1,4 +1,4 @@
-package net.timardo.lt3dimporter.converter;
+package net.timardo.lt3dimporter.importer;
 
 import de.javagl.obj.FloatTuple;
 import net.minecraft.util.math.BlockPos;

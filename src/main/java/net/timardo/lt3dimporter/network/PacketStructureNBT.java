@@ -14,6 +14,7 @@ import net.timardo.lt3dimporter.LT3DImporter;
 import net.timardo.lt3dimporter.littlestructure.ModelImporter;
 
 public class PacketStructureNBT extends CreativeCorePacket {
+    
     private NBTTagCompound nbt;
     
     public PacketStructureNBT() {}
@@ -39,10 +40,10 @@ public class PacketStructureNBT extends CreativeCorePacket {
 
     @Override
     public void executeServer(EntityPlayer player) {
-        if (nbt.hasNoTags()) return;
+        if (this.nbt.hasNoTags()) return;
         
         ModelImporter structure = null;
-        StructureLocation loc = new StructureLocation((NBTTagCompound) nbt.getTag("loc"));
+        StructureLocation loc = new StructureLocation((NBTTagCompound) this.nbt.getTag("loc"));
         
         try {
             structure = (ModelImporter) loc.find(player.world);
@@ -51,22 +52,22 @@ public class PacketStructureNBT extends CreativeCorePacket {
             return;
         }
         
-        if (nbt.getBoolean("item")) {
+        if (this.nbt.getBoolean("item")) {
             ItemStack slot = structure.output.inventory.getStackInSlot(0);
             if (!(slot.getItem() instanceof ItemLittleRecipeAdvanced || player.isCreative())) return;
             ItemStack recipe = new ItemStack(LittleTiles.recipeAdvanced);
-            recipe.setTagCompound((NBTTagCompound) nbt.getTag("recipe_nbt"));
+            recipe.setTagCompound((NBTTagCompound) this.nbt.getTag("recipe_nbt"));
             structure.output.inventory.setInventorySlotContents(0, recipe);
         } else {
-            structure.model = nbt.getString("model");
-            structure.texFile = nbt.getString("tex_file");
-            structure.color = nbt.getInteger("color");
-            structure.maxSize = nbt.getString("max_size");
-            structure.gridSize = nbt.getString("grid");
-            structure.precision = nbt.getString("precision");
-            structure.baseBlock = new ItemStack((NBTTagCompound) nbt.getTag("base_block"));
-            structure.useTex = nbt.getBoolean("use_tex");
-            structure.useMtl = nbt.getBoolean("use_mtl");
+            structure.model = this.nbt.getString("model");
+            structure.texFile = this.nbt.getString("tex_file");
+            structure.color = this.nbt.getInteger("color");
+            structure.maxSize = this.nbt.getString("max_size");
+            structure.gridSize = this.nbt.getString("grid");
+            structure.precision = this.nbt.getString("precision");
+            structure.baseBlock = new ItemStack((NBTTagCompound) this.nbt.getTag("base_block"));
+            structure.useTex = this.nbt.getBoolean("use_tex");
+            structure.useMtl = this.nbt.getBoolean("use_mtl");
         }
     }
 }
