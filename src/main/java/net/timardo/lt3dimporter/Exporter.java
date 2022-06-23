@@ -72,11 +72,11 @@ public class Exporter implements Runnable {
     @Override
     public void run() {
         System.out.println("exporting");
-        this.exportModel(blueprint);
+        this.exportModel(this.blueprint);
 
         try {
             String fullPath = this.outputFolder + (this.outputFolder.isEmpty() ? "" : File.separator) + this.outputFileName;
-            File folder = new File(fullPath.substring(0, fullPath.lastIndexOf(File.separator)));
+            File folder = new File(this.outputFolder);
             folder.mkdirs();
             OutputStream mtlOutputStream = new FileOutputStream(fullPath + ".mtl");
             MtlWriter.write(this.mtls, mtlOutputStream);
