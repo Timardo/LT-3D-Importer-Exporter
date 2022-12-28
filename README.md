@@ -1,7 +1,7 @@
 # LT 3D Importer
-An addon for [Little Tiles Mod](https://www.curseforge.com/minecraft/mc-mods/littletiles) that makes building even more exciting!
+An addon for [LittleTiles Mod](https://www.curseforge.com/minecraft/mc-mods/littletiles) that makes building even more exciting!
 
-This mod allows you to import a 3D model (currently only in .obj format) as a Little Tiles structure.
+This mod allows you to import a 3D model (currently only in .obj format) as a LittleTiles structure. It also allows you to export any LittleTiles structure as a 3D model.
 
 Unbelievably, it requires LittleTiles as well as CreativeCore mods to run. Go find them on CurseForge if you don't have them yet.
 
@@ -23,8 +23,6 @@ CurseForge - https://www.curseforge.com/minecraft/mc-mods/littletiles-3d-importe
  - Transform bones or similar parts of a model from supported formats?
 
  - Minimize tiles used? (remove those players cannot actually see)
-
- - Make the importing server friendly
  
  - Add support for more formats (Blockbuster mod?, FBX?, VOX?)
  
