@@ -11,6 +11,7 @@ public class NormalTexture implements ITexture {
     
     public NormalTexture(String texFile) throws IOException {
         this.texture = ImageIO.read(new File(texFile));
+        this.texture = resizeTextureIfNeeded(this.texture);
     }
 
     @Override

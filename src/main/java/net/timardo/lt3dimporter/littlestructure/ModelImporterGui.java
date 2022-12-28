@@ -17,7 +17,7 @@ import com.creativemd.littletiles.common.util.grid.LittleGridContext;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.nbt.NBTTagCompound;
 import net.timardo.lt3dimporter.importer.Importer;
-import net.timardo.lt3dimporter.network.PacketStructureNBT;
+import net.timardo.lt3dimporter.network.PacketStructureImporterNBT;
 
 public class ModelImporterGui extends SubGui {
     public GuiTextfield modelFile;
@@ -50,7 +50,7 @@ public class ModelImporterGui extends SubGui {
         this.gridSizes.select(this.parentStructure.gridSize);
         addControl(this.gridSizes);
         
-        this.minPrecision = new GuiTextfield("modelfile", "0.7", 182, 5, 27, 14);
+        this.minPrecision = new GuiTextfield("precision", "0.7", 182, 5, 27, 14);
         this.minPrecision.allowedChars = new char[] {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'}; // only positive float values
         this.minPrecision.setCustomTooltip("Precision");
         this.minPrecision.text = this.parentStructure.precision;
@@ -132,7 +132,7 @@ public class ModelImporterGui extends SubGui {
         this.maxSize.setNumbersOnly();
         addControl(this.maxSize);
         
-        addControl(new GuiButton("convertbutton", "Import!", 144, 80, 42, 14) {
+        addControl(new GuiButton("importbutton", "Import!", 144, 80, 42, 14) {
             
             @Override
             public void onClicked(int var1, int var2, int var3) {
@@ -174,7 +174,7 @@ public class ModelImporterGui extends SubGui {
     }
 
     public void updateSettings() {
-        PacketStructureNBT nbtPacket = new PacketStructureNBT();
+        PacketStructureImporterNBT nbtPacket = new PacketStructureImporterNBT();
         NBTTagCompound packetNBT = new NBTTagCompound();
         packetNBT.setBoolean("item", false);
         packetNBT.setTag("loc", new StructureLocation(this.parentStructure).write());

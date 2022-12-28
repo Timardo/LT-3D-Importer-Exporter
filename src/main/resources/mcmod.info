@@ -8,7 +8,7 @@
   "url": "",
   "updateUrl": "",
   "authorList": ["Timardo"],
-  "credits": "CreativeMD for the awesome Little Tiles mod",
+  "credits": "CreativeMD for the awesome LittleTiles mod",
   "logoFile": "",
   "screenshots": [],
   "dependencies": ["creativecore", "littletiles"]

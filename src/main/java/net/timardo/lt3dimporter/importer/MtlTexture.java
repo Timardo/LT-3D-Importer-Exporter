@@ -27,6 +27,8 @@ public class MtlTexture implements ITexture {
             this.texture = null;
         }
         
+        this.texture = resizeTextureIfNeeded(this.texture);
+        
         this.opacity = mtlFile.getD();
         this.diffuse = new float[] { MathHelper.clamp(mtlFile.getKd().getX(), 0, 1), MathHelper.clamp(mtlFile.getKd().getY(), 0, 1), MathHelper.clamp(mtlFile.getKd().getZ(), 0, 1) };
         Color c = ColorUtils.IntToRGBA(ColorUtils.VecToInt(new Vec3d(diffuse[0], diffuse[1], diffuse[2])));

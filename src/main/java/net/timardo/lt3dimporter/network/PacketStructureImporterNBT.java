@@ -13,11 +13,11 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.timardo.lt3dimporter.LT3DImporter;
 import net.timardo.lt3dimporter.littlestructure.ModelImporter;
 
-public class PacketStructureNBT extends CreativeCorePacket {
+public class PacketStructureImporterNBT extends CreativeCorePacket {
     
     private NBTTagCompound nbt;
     
-    public PacketStructureNBT() {}
+    public PacketStructureImporterNBT() {}
     
     public void setNBT(NBTTagCompound nbt) {
         this.nbt = nbt;

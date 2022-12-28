@@ -33,7 +33,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.text.TextFormatting;
 import net.timardo.lt3dimporter.LT3DImporter;
 import net.timardo.lt3dimporter.littlestructure.ModelImporter;
-import net.timardo.lt3dimporter.network.PacketStructureNBT;
+import net.timardo.lt3dimporter.network.PacketStructureImporterNBT;
 import net.timardo.lt3dimporter.obj3d.LightObj;
 import net.timardo.lt3dimporter.obj3d.LightObjGroup;
 
@@ -87,7 +87,7 @@ public class Importer implements Runnable {
         }
         
         LT3DImporter.logger.debug("done in " + (System.currentTimeMillis() - time) + "ms");
-        PacketStructureNBT nbtPacket = new PacketStructureNBT();
+        PacketStructureImporterNBT nbtPacket = new PacketStructureImporterNBT();
         NBTTagCompound packetNBT = new NBTTagCompound();
         packetNBT.setBoolean("item", true);
         packetNBT.setTag("loc", new StructureLocation(this.structure).write());

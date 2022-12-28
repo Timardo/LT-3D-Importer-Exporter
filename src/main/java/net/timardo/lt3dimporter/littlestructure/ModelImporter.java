@@ -40,7 +40,7 @@ public class ModelImporter extends LittleStructurePremade {
     }
 
     @Override
-    protected void loadFromNBTExtra(NBTTagCompound nbt) { 
+    protected void loadFromNBTExtra(NBTTagCompound nbt) {
         this.model = nbt.getString("lt_model");
         this.gridSize = nbt.hasKey("lt_grid") ? nbt.getString("lt_grid") : this.gridSize;
         this.precision = nbt.hasKey("lt_prec") ? nbt.getString("lt_prec") : this.precision;

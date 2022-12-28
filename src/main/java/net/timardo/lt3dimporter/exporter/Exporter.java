@@ -1,4 +1,4 @@
-package net.timardo.lt3dimporter;
+package net.timardo.lt3dimporter.exporter;
 
 import com.creativemd.creativecore.client.rendering.RenderBox;
 import com.creativemd.creativecore.client.rendering.model.CreativeBakedModel;
@@ -22,6 +22,9 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.Tuple;
+import net.minecraft.util.math.BlockPos;
+import net.timardo.lt3dimporter.LT3DImporter;
+import net.timardo.lt3dimporter.Utils;
 import net.timardo.lt3dimporter.obj3d.LightObjFace;
 
 import java.awt.Graphics;
@@ -42,6 +45,8 @@ import java.util.Set;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import static net.timardo.lt3dimporter.Utils.*;
 
 public class Exporter implements Runnable {
@@ -49,7 +54,7 @@ public class Exporter implements Runnable {
     private static final List<EnumFacing> FACINGS = Arrays.asList(EnumFacing.VALUES);
     private EntityPlayer player;
     private ItemStack blueprint;
-    private Obj obj;
+    private Obj obj = Objs.create();
     private List<Mtl> mtls = new ArrayList<Mtl>();
     private Map<Integer, Map<Long, Integer>> vertices = new HashMap<Integer, Map<Long, Integer>>(); // all vertices
     private Map<Long, Integer> textureCoords = new HashMap<Long, Integer>(); // all texture coordinates with their indices stored as Long from two float values
@@ -66,12 +71,13 @@ public class Exporter implements Runnable {
         this.blueprint = blueprint;
         this.outputFolder = outputFolder;
         this.outputFileName = outputFileName;
-        this.obj = Objs.create();
+        
+        if (this.outputFolder.startsWith("\"") || this.outputFolder.endsWith("\""))
+            this.outputFolder = this.outputFolder.replace("\"", "");
     }
     
     @Override
     public void run() {
-        System.out.println("exporting");
         this.exportModel(this.blueprint);
 
         try {
@@ -86,11 +92,10 @@ public class Exporter implements Runnable {
             mtlOutputStream.close();
             objOutputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LT3DImporter.logger.error(ExceptionUtils.getStackTrace(e));
         }
         
         postMessage(this.player, "Exported");
-        System.out.println("exported");
     }
     
     /**
@@ -223,15 +228,16 @@ public class Exporter implements Runnable {
                         TextureAtlasSprite sprite = quad.getSprite();
                         String iconName = sprite.getIconName();
                         String materialName = iconName.substring(0, iconName.indexOf(':')) + "_" + iconName.substring(iconName.lastIndexOf('/') + 1); //base material name
-                        int baseBlockColor = Minecraft.getMinecraft().getBlockColors().colorMultiplier(cube.getBlockState(), null, null, quad.getTintIndex()) | 0xff000000; // get color by biome (currently just defualt) and set alpha to 255 regardless of given color
-                        int finalColor = multiplyColor(baseBlockColor, cube.color);
+                        int baseBlockColor = Minecraft.getMinecraft().getBlockColors().colorMultiplier(cube.getBlockState(), this.player.getEntityWorld(), new BlockPos(32, 64, 285), quad.getTintIndex()) | 0xff000000; // get color by biome (currently just defualt) and set alpha to 255 regardless of given color
+                        int alpha = ColorUtils.getAlpha(cube.color);
+                        int cubeColorOnly = (cube.color | 0xff000000);
+                        int finalColor = multiplyColor((cubeColorOnly != -1 || (cubeColorOnly == -1 && alpha != 255)) && baseBlockColor != -1 ? multiplyColor(0xff999999, cube.color) : cube.color, cubeColorOnly != -1 && baseBlockColor != -1 ? -1 : baseBlockColor); // for some weird reason colored blocks with colormap ignore given color map and multiply the cube color with 0.6, but using color map instead of cube color if only alpha is set in cube color
                         int[][] textureData = sprite.getFrameTextureData(0); // only get the first frame ?? TODO support for animated textures? (would require a script for blender probably), also why is it 2D array?
                         int[] rawFinalTextureData = new int[textureData[0].length];
-                        int alpha = ColorUtils.getAlpha(finalColor);
                         int alphaColor = alpha << 24 | 0x00ffffff; // only use alpha to multiply textures with no tint index on blocks which have quads with tint index
                         
                         for (int k = 0; k < textureData[0].length; k++) { // only getting the first texture data TODO check what the index actually means (constructing more textures into one? normal map? roughness map?)
-                            rawFinalTextureData[k] = multiplyColor(textureData[0][k], alpha != 255 || !useTintIndex || (useTintIndex && quad.hasTintIndex()) ? finalColor : alphaColor); // multiply color only if alpha has changed or the tile does not use tint index or it does use tint index and has tint index
+                            rawFinalTextureData[k] = multiplyColor(textureData[0][k], (alpha != 255 && (cube.color | 0xff000000) != -1) || !useTintIndex || (useTintIndex && quad.hasTintIndex()) ? finalColor : alphaColor); // multiply color only if alpha has changed AND cube color is actually set (not only alpha) or the tile does not use tint index or it does use tint index and has tint index
                         }
                         
                         BufferedImage image = new BufferedImage(sprite.getIconWidth(), sprite.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
@@ -252,7 +258,7 @@ public class Exporter implements Runnable {
                         buildTexture = true;
                     }
                     
-                    matName = matName + this.textures.get(matName).get(cube.color).toString(); // append index of this color as material name
+                    matName = matName + "_" + cube.color; // append the color in integer form
                     
                     if (buildTexture) {
                         BufferedImage finalTexture = new BufferedImage(faceTextures.get(0).getWidth(), faceTextures.get(0).getHeight(), BufferedImage.TYPE_INT_ARGB); // TODO currently getting just the first image assuming all images making up a face are of the same size

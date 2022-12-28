@@ -1,0 +1,40 @@
+{
+    "result": {
+        "item": "littletiles:premade",
+        "data": 0,
+        "structure": "modelexporter"
+    },
+    "pattern": [
+        "XTB",
+        "QRS",
+        "PPP"
+    ],
+    "type": "littletiles:crafting_shaped_premade",
+    "key": {
+        "T": {
+            "item": "minecraft:redstone_torch"
+        },
+        "B": {
+            "item": "minecraft:iron_bars"
+        },
+        "Q": {
+            "item": "minecraft:quartz_block",
+            "data": 0
+        },
+        "P": {
+            "item": "minecraft:planks",
+            "data": 0
+        },
+        "R": {
+            "item": "littletiles:recipeadvanced",
+            "data": 0
+        },
+        "S": {
+            "item": "minecraft:stone_slab",
+            "data": 0
+        },
+        "X": {
+            "item": "minecraft:air"
+        }
+    }
+}
