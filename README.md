@@ -1,4 +1,4 @@
-# LT 3D Importer
+# LT 3D Importer & Exporter
 An addon for [LittleTiles Mod](https://www.curseforge.com/minecraft/mc-mods/littletiles) that makes building even more exciting!
 
 This mod allows you to import a 3D model (currently only in .obj format) as a LittleTiles structure. It also allows you to export any LittleTiles structure as a 3D model.
